@@ -14,7 +14,7 @@ async function fetchGenres() {
 }
 
 export default async function Sidebar() {
-  const genres = await fetchGenres() || [];
+  const genres = (await fetchGenres()) || [];
   return (
     <aside className="w-[220px] flex flex-col gap-1">
       <Button className="justify-start" variant="outline" asChild>

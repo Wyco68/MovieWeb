@@ -8,4 +8,4 @@ Day 1 - install shadcn/ui library
 
         Data fetching
         Get api-key from TMDB and add in .env
-        Edit Sidebar.js
+        Edit Sidebar.js, Movies.js, app-page.js
