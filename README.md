@@ -4,5 +4,8 @@ Day 1 - install shadcn/ui library
         add button component
         npx shadcn@latest add button
 
-        Layout
-        edit Header.js, Sidebar.js, page.js and layout.js
+        Layout- Header.js, Sidebar.js, page.js and layout.js
+
+        Data fetching
+        Get api-key from TMDB and add in .env
+        Edit Sidebar.js
