@@ -18,3 +18,9 @@ Day 2 - Show movies by genres
 
         Show movie in preview
         Edit app/movie/id/page.js, components/Persons.js
+
+        Search Movies
+        Edit app/search/page.js, components/Header.js
+
+        add input component
+        npx shadcn@latest add input
