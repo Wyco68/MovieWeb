@@ -8,7 +8,7 @@ export default function Movies({ movies }) {
       {movies.map((movie) => (
         <div key={movie.id} className="w-[200px] text-center flex flex-col">
           {movie.poster_path ? (
-            <Link href={`/movies/${movie.id}`}>
+            <Link href={`/movie/${movie.id}`}>
               <img
                 src={poster + movie.poster_path}
                 className="w-full hover:scale-105 transition-all"
