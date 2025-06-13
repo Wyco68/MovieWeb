@@ -7,8 +7,8 @@ import Sidebar from "@/components/Sidebar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Next Movies",
-  description: "Tutorial project for Next.js",
+  title: "NextFlix",
+  description: "Movie Search App using Next.js",
 };
 
 export default function RootLayout({ children }) {
