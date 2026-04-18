@@ -1,29 +1,26 @@
-import { Inter } from "next/font/google";
 import "./globals.css";
 
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 
-const inter = Inter({ subsets: ["latin"] });
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata = {
   title: "NextFlix",
   description: "Movie Search App using Next.js",
+  metadataBase: new URL(siteUrl),
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <div className="mx-4 m-auto">
+      <body>
+        <div className="app-shell">
           <Header />
-          <section className="flex gap-4 min-h-[500px]">
+          <section className="app-content">
             <Sidebar />
-            <main className="border-l border-slate-300 px-4">{children}</main>
+            <main className="content-panel">{children}</main>
           </section>
-          <footer className="text-center py-4 text-slate-400 mt-4 border-t border-slate-300">
-            <small className="text-xs">&copy; Copyright 2024</small>
-          </footer>
         </div>
       </body>
     </html>

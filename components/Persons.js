@@ -1,35 +1,35 @@
-const token = process.env.TMDB_TOKEN;
-
-async function fetchCasts(id) {
-  const res = await fetch(`https://api.themoviedb.org/3/movie/${id}/credits`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await res.json();
-  return data.cast;
-}
+import Image from "next/image";
+import { getImageUrl, tmdbFetch } from "@/lib/tmdb";
 
 export default async function Persons({ movie }) {
-  const casts = await fetchCasts(movie.id);
-  const profile = "http://image.tmdb.org/t/p/w185";
+  const data = await tmdbFetch(`/movie/${movie.id}/credits`);
+  const casts = data?.cast ?? [];
 
   return (
-    <div className="flex gap-4 flex-row flex-wrap">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4">
       {casts.map((cast) => (
         <div
           key={cast.id}
-          className="w-[180px] bg-gray-100 text-center flex flex-col justify-between"
+          className="rounded-xl border border-black/8 bg-[#f5f5f7] text-center flex flex-col justify-between p-2 shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
         >
           {cast.profile_path ? (
-            <img src={profile + cast.profile_path} />
+            <Image
+              src={getImageUrl(cast.profile_path, "w185")}
+              alt={cast.name || "Cast member"}
+              width={185}
+              height={278}
+              className="w-full h-auto rounded-lg"
+            />
           ) : (
-            <div></div>
+            <div className="w-full h-[278px] bg-slate-200 rounded-lg"></div>
           )}
           <div className="p-2">
-            <div className="text-sm">{cast.name}</div>
-            <span className="text-sm text-gray-500">{cast.character}</span>
+            <div className="text-[14px] leading-tight font-medium tracking-[-0.18px]">
+              {cast.name || "Unknown"}
+            </div>
+            <span className="text-[12px] muted-label">
+              {cast.character || "-"}
+            </span>
           </div>
         </div>
       ))}

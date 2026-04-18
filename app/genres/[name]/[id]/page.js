@@ -1,26 +1,16 @@
 import Movies from "@/components/Movies";
-
-const token = process.env.TMDB_TOKEN;
-
-async function fetchMovies(id) {
-  const res = await fetch(
-    `https://api.themoviedb.org/3/discover/movie?with_genres=${id}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  return await res.json();
-}
+import { tmdbFetch } from "@/lib/tmdb";
 
 export default async function Home({ params }) {
-  const byGenres = await fetchMovies(params.id);
+  const resolvedParams = await params;
+  const byGenres = await tmdbFetch("/discover/movie", {
+    params: { with_genres: resolvedParams.id },
+  });
 
   return (
     <>
-      <h3 className="font-bold border-b mb-4 pb-2">{params.name}</h3>
-      <Movies movies={byGenres.results} />
+      <h3 className="section-title">{resolvedParams.name}</h3>
+      <Movies movies={byGenres?.results ?? []} />
     </>
   );
 }
