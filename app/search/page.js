@@ -1,27 +1,17 @@
 import Movies from "@/components/Movies";
-import { headers } from "next/headers";
-
-const token = process.env.TMDB_TOKEN;
-
-async function fetchSearch(query) {
-  const res = await fetch(
-    `https://api.themoviedb.org/3/search/movie?query=${query}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  return await res.json();
-}
+import { tmdbFetch } from "@/lib/tmdb";
 
 export default async function Search({ searchParams }) {
-  const search = await fetchSearch(searchParams.q);
+  const resolvedSearchParams = await searchParams;
+  const q = String(resolvedSearchParams?.q ?? "").trim();
+  const search = q
+    ? await tmdbFetch("/search/movie", { params: { query: q } })
+    : { results: [] };
 
   return (
     <>
-      <h3 className="font-bold border-b mb-4 pb-2">Search:{searchParams.q}</h3>
-      <Movies movies={search.results} />
+      <h3 className="section-title">Search: {q || "-"}</h3>
+      <Movies movies={search?.results ?? []} />
     </>
   );
 }

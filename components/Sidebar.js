@@ -1,22 +1,13 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-const token = process.env.TMDB_TOKEN;
-
-async function fetchGenres() {
-  const res = await fetch("https://api.themoviedb.org/3/genre/movie/list", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  const data = await res.json();
-  return data.genres;
-}
+import { tmdbFetch } from "@/lib/tmdb";
 
 export default async function Sidebar() {
-  const genres = (await fetchGenres()) || [];
+  const data = await tmdbFetch("/genre/movie/list");
+  const genres = data?.genres ?? [];
+
   return (
-    <aside className="w-[220px] flex flex-col gap-1">
+    <aside className="sidebar-panel flex flex-col gap-2 p-3">
       <Button className="justify-start" variant="outline" asChild>
         <Link href="/">All Movies</Link>
       </Button>
