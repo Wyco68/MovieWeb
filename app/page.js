@@ -5,9 +5,11 @@ import { tmdbFetch } from "@/lib/tmdb";
 import { getImageUrl } from "@/lib/tmdb";
 
 export default async function Home() {
-  const [popular, trending] = await Promise.all([
+  const [popular, trending, tvPopular, peoplePopular] = await Promise.all([
     tmdbFetch("/movie/popular"),
     tmdbFetch("/trending/movie/day"),
+    tmdbFetch("/tv/popular"),
+    tmdbFetch("/person/popular"),
   ]);
 
   const featured = popular?.results?.[0];
@@ -58,6 +60,12 @@ export default async function Home() {
 
       <h3 className="section-title mt-8">Trending</h3>
       <Movies movies={trending?.results ?? []} />
+
+      <h3 className="section-title mt-8">Popular TV Shows</h3>
+      <Movies movies={tvPopular?.results ?? []} mediaType="tv" />
+
+      <h3 className="section-title mt-8">Popular People</h3>
+      <Movies movies={peoplePopular?.results ?? []} mediaType="person" />
     </div>
   );
 }
