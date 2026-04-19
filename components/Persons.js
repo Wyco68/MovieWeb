@@ -10,7 +10,7 @@ export default async function Persons({ movie }) {
       {casts.map((cast) => (
         <div
           key={cast.id}
-          className="rounded-xl border border-black/8 bg-[#f5f5f7] text-center flex flex-col justify-between p-2 shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
+          className="movie-card text-center flex flex-col justify-between p-2"
         >
           {cast.profile_path ? (
             <Image
@@ -21,7 +21,7 @@ export default async function Persons({ movie }) {
               className="w-full h-auto rounded-lg"
             />
           ) : (
-            <div className="w-full h-[278px] bg-slate-200 rounded-lg"></div>
+            <div className="w-full h-[278px] bg-slate-200 dark:bg-[#2a2a2d] rounded-lg"></div>
           )}
           <div className="p-2">
             <div className="text-[14px] leading-tight font-medium tracking-[-0.18px]">

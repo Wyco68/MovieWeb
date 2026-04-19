@@ -19,9 +19,11 @@ export default async function Header() {
 
   return (
     <nav className="app-nav mt-4 px-4 py-3 flex items-center justify-between gap-3">
-      <Link href="/" className="text-white no-underline hover:opacity-90 flex flex-col">
-        <span className="font-semibold text-[18px] tracking-[-0.26px]">NextFlix</span>
-        <span className="text-[11px] uppercase tracking-[0.14em] text-white/60">
+      <Link href="/" className="no-underline hover:opacity-90 flex flex-col">
+        <span className="nav-brand-title font-semibold text-[18px] tracking-[-0.26px]">
+          NextFlix
+        </span>
+        <span className="nav-brand-subtitle text-[11px] uppercase tracking-[0.14em]">
           Cinematic Explorer
         </span>
       </Link>

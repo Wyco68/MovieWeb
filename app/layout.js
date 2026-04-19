@@ -1,7 +1,9 @@
 import "./globals.css";
+import Script from "next/script";
 
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
@@ -13,7 +15,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem('nextflix-theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark');}}catch(e){}})();`}
+        </Script>
+      </head>
       <body>
         <div className="app-shell">
           <Header />
@@ -21,6 +28,9 @@ export default function RootLayout({ children }) {
             <Sidebar />
             <main className="content-panel">{children}</main>
           </section>
+        </div>
+        <div className="theme-fab">
+          <ThemeToggle />
         </div>
       </body>
     </html>

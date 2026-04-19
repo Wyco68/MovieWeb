@@ -5,18 +5,18 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-[980px] border px-2.5 py-1 text-[11px] font-normal tracking-[-0.12px] w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:ring-[2px] focus-visible:ring-[#0071e3] transition-[color,box-shadow] overflow-hidden",
+  "inline-flex items-center justify-center rounded-[4px] border px-2 py-0.5 text-[11px] font-normal tracking-normal w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:ring-[2px] focus-visible:ring-[#533afd] transition-[color,box-shadow] overflow-hidden",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-[#1d1d1f] text-white [a&]:hover:bg-black",
+          "border-transparent bg-[#533afd] text-white [a&]:hover:bg-[#4434d4]",
         secondary:
-          "border-transparent bg-[#ebebef] text-[#1d1d1f] [a&]:hover:bg-[#e3e3e8]",
+          "border-[#e5edf5] bg-white text-[#273951] [a&]:hover:bg-[#f6f9fc] dark:border-white/20 dark:bg-[#0d253d] dark:text-white dark:[a&]:hover:bg-white/10",
         destructive:
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90",
         outline:
-          "border-black/14 text-[rgba(0,0,0,0.72)] [a&]:hover:bg-black/4",
+          "border-[#b9b9f9] text-[#533afd] [a&]:hover:bg-[#533afd]/5 dark:border-white/30 dark:text-white dark:[a&]:hover:bg-white/10",
       },
     },
     defaultVariants: {

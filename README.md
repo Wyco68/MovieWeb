@@ -24,3 +24,14 @@ Day 2 - Show movies by genres
 
         add input component
         npx shadcn@latest add input
+
+Day 3 - improve movie details page
+        Add release date, rating and language in movie info section
+        Edit app/movie/id/page.js
+        
+        pagination and better browsing
+        Add next/previous pagination for movies list
+        Edit app/page.js,
+
+        Add debounce in search input
+        Edit components/Header.js,

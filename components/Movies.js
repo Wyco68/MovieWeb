@@ -24,7 +24,7 @@ export default function Movies({ movies }) {
               />
             </Link>
           ) : (
-            <div className="w-full h-[300px] bg-slate-100 rounded-lg"></div>
+            <div className="w-full h-[300px] bg-slate-100 dark:bg-[#1c1e54] rounded-lg"></div>
           )}
           <div className="px-1 py-2">
             <h4 className="mt-1 text-[15px] leading-tight font-semibold tracking-[-0.2px]">

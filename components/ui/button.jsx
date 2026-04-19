@@ -5,21 +5,21 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap border text-[14px] font-normal tracking-[-0.22px] transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-[2px] focus-visible:ring-[#0071e3]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap border text-[14px] font-normal tracking-normal transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-[2px] focus-visible:ring-[#533afd]",
   {
     variants: {
       variant: {
         default:
-          "rounded-[980px] border-transparent bg-[#0071e3] text-white hover:bg-[#0077ed]",
+          "rounded-[4px] border-transparent bg-[#533afd] text-white hover:bg-[#4434d4]",
         destructive:
-          "rounded-[980px] border-transparent bg-destructive text-white hover:bg-destructive/90",
+          "rounded-[4px] border-transparent bg-destructive text-white hover:bg-destructive/90",
         outline:
-          "rounded-[11px] border-black/8 bg-[#fafafc] text-[rgba(0,0,0,0.82)] hover:bg-[#ededf2]",
+          "rounded-[4px] border-[#b9b9f9] bg-transparent text-[#533afd] hover:bg-[#533afd]/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10",
         secondary:
-          "rounded-[980px] border-transparent bg-[#1d1d1f] text-white hover:bg-black",
+          "rounded-[4px] border-transparent bg-[#061b31] text-white hover:bg-[#0d253d] dark:bg-white dark:text-[#061b31] dark:hover:bg-white/90",
         ghost:
-          "rounded-[11px] border-transparent bg-transparent hover:bg-black/5",
-        link: "rounded-[980px] border border-[#0066cc]/20 text-[#0066cc] hover:bg-[#0066cc]/6",
+          "rounded-[4px] border-transparent bg-transparent hover:bg-[#533afd]/6 dark:hover:bg-white/10",
+        link: "rounded-[4px] border border-[#b9b9f9] text-[#533afd] hover:bg-[#533afd]/8 dark:border-white/30 dark:text-white dark:hover:bg-white/10",
       },
       size: {
         default: "h-10 px-5 py-2 has-[>svg]:px-4",
