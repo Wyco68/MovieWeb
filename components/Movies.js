@@ -2,21 +2,58 @@ import Image from "next/image";
 import Link from "next/link";
 import { getImageUrl } from "@/lib/tmdb";
 
-export default function Movies({ movies }) {
+function resolveMediaType(item, fallbackType) {
+  if (item?.media_type) {
+    return item.media_type;
+  }
+
+  if (fallbackType) {
+    return fallbackType;
+  }
+
+  if (item?.name && !item?.title) {
+    return "tv";
+  }
+
+  return "movie";
+}
+
+function getMediaLink(item, mediaType) {
+  if (mediaType === "tv") {
+    return `/tv/${item.id}`;
+  }
+
+  if (mediaType === "person") {
+    return `/person/${item.id}`;
+  }
+
+  return `/movie/${item.id}`;
+}
+
+export default function Movies({ movies, mediaType: forcedMediaType }) {
   const safeMovies = Array.isArray(movies) ? movies : [];
 
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
-      {safeMovies.map((movie) => (
-        <div
-          key={movie.id}
+      {safeMovies.map((item) => {
+        const mediaType = resolveMediaType(item, forcedMediaType);
+        const imagePath = mediaType === "person" ? item.profile_path : item.poster_path;
+        const displayTitle = item.title || item.name || "Untitled";
+        const subtitle =
+          mediaType === "person"
+            ? item.known_for_department || "Person"
+            : item.release_date?.split("-")[0] || item.first_air_date?.split("-")[0] || "N/A";
+
+        return (
+          <div
+            key={`${mediaType}-${item.id}`}
           className="movie-card p-2 text-center flex flex-col"
         >
-          {movie.poster_path ? (
-            <Link href={`/movie/${movie.id}`} className="poster-frame block">
+          {imagePath ? (
+            <Link href={getMediaLink(item, mediaType)} className="poster-frame block">
               <Image
-                src={getImageUrl(movie.poster_path, "w342")}
-                alt={`${movie.title || "Movie"} poster`}
+                src={getImageUrl(imagePath, "w342")}
+                alt={`${displayTitle} poster`}
                 width={342}
                 height={513}
                 sizes="(max-width: 640px) 100vw, 200px"
@@ -28,14 +65,15 @@ export default function Movies({ movies }) {
           )}
           <div className="px-1 py-2">
             <h4 className="mt-1 text-[15px] leading-tight font-semibold tracking-[-0.2px]">
-              {movie.title || "Untitled"}
+              {displayTitle}
             </h4>
             <span className="text-[12px] muted-label">
-              {movie.release_date?.split("-")[0] ?? "N/A"}
+              {subtitle}
             </span>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

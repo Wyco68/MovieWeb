@@ -11,6 +11,12 @@ export default async function Sidebar() {
       <Button className="justify-start" variant="outline" asChild>
         <Link href="/">All Movies</Link>
       </Button>
+      <Button className="justify-start" variant="outline" asChild>
+        <Link href="/tv">TV Shows</Link>
+      </Button>
+      <Button className="justify-start" variant="outline" asChild>
+        <Link href="/people">People</Link>
+      </Button>
       {genres.map((genre) => {
         return (
           <Button
