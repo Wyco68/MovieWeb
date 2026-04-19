@@ -39,12 +39,12 @@ export default async function Home() {
             </p>
             <div className="mt-5 flex gap-2">
               <Link href={`/movie/${featured.id}`}>
-                <span className="inline-flex items-center rounded-[980px] bg-[#0071e3] px-4 py-2 text-[14px] text-white tracking-[-0.22px]">
+                <span className="inline-flex items-center rounded-[4px] bg-[#533afd] px-4 py-2 text-[14px] text-white">
                   View Details
                 </span>
               </Link>
               <Link href="/search">
-                <span className="inline-flex items-center rounded-[980px] border border-white/35 bg-white/10 px-4 py-2 text-[14px] text-white tracking-[-0.22px] backdrop-blur-sm">
+                <span className="hero-cta-soft inline-flex items-center rounded-[4px] border px-4 py-2 text-[14px] backdrop-blur-sm">
                   Explore More
                 </span>
               </Link>

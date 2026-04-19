@@ -38,11 +38,11 @@ export default async function Movie({ params }) {
           alt={`${movie.title} backdrop`}
           width={1280}
           height={720}
-          className="w-full h-auto rounded-xl border border-black/8"
+          className="w-full h-auto rounded-[6px] border border-[var(--app-panel-border)]"
           priority
         />
       ) : null}
-      <p className="mt-4 text-[17px] leading-[1.45] tracking-[-0.22px] text-[rgba(0,0,0,0.82)]">
+      <p className="mt-4 text-[17px] leading-[1.45] tracking-[-0.22px] text-[rgba(0,0,0,0.82)] dark:text-white/88">
         {movie.overview}
       </p>
       <div className="mt-8">
