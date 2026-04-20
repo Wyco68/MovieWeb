@@ -28,7 +28,7 @@ export default async function Header() {
         </span>
       </Link>
       <form action={search} className="flex gap-2 w-full max-w-[460px] items-center">
-        <Input type="text" name="q" placeholder="Search movies, actors, keywords" />
+        <Input type="text" name="q" placeholder="Search movies, TV shows, people" />
         <Button type="submit" className="min-w-[104px] font-medium">
           Find
         </Button>
