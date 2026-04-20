@@ -53,8 +53,8 @@ export default function Movies({
             key={`${mediaType}-${item.id}`}
             className="movie-card p-2 text-center flex flex-col"
           >
-            {imagePath ? (
-              <Link href={getMediaLink(item, mediaType)} className="poster-frame block">
+            <Link href={getMediaLink(item, mediaType)} className="poster-frame block">
+              {imagePath ? (
                 <Image
                   src={getConfiguredImageUrl(imagePath, {
                     config: imageConfig,
@@ -68,10 +68,14 @@ export default function Movies({
                   sizes="(max-width: 640px) 45vw, (max-width: 1024px) 28vw, 180px"
                   className="w-full transition-transform duration-300 hover:scale-[1.04]"
                 />
-              </Link>
-            ) : (
-              <div className="w-full h-[300px] bg-slate-100 dark:bg-[#1c1e54] rounded-lg"></div>
-            )}
+              ) : (
+                <div className="w-full h-[300px] rounded-lg bg-gradient-to-br from-[#5b45ff]/25 via-[#533afd]/18 to-[#0d253d]/20 dark:from-[#5b45ff]/30 dark:via-[#2f2f75]/40 dark:to-[#0d253d]/55 border border-white/20 dark:border-white/15 flex items-center justify-center">
+                  <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-white/78">
+                    No Photo
+                  </span>
+                </div>
+              )}
+            </Link>
             <div className="px-1 py-2">
               <h4 className="mt-1 text-[15px] leading-tight font-semibold tracking-[-0.2px]">
                 {displayTitle}

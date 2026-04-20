@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import BackButton from "@/components/BackButton";
+import Movies from "@/components/Movies";
 import Persons from "@/components/Persons";
 import {
   getConfiguredImageUrl,
@@ -42,8 +44,20 @@ export default async function Movie({ params }) {
   });
   const releaseYear = movie.release_date?.split("-")[0] ?? "N/A";
 
+  const [similar, recommendations, collection] = await Promise.all([
+    tmdbFetch(`/movie/${movie.id}/similar`),
+    tmdbFetch(`/movie/${movie.id}/recommendations`),
+    movie.belongs_to_collection?.id
+      ? tmdbFetch(`/collection/${movie.belongs_to_collection.id}`)
+      : Promise.resolve(null),
+  ]);
+
   return (
     <>
+      <div className="mb-4">
+        <BackButton fallbackHref="/" label="Back" />
+      </div>
+
       <h2 className="text-[clamp(2rem,3vw,3.5rem)] leading-[1.08] font-semibold tracking-[-0.28px]">
         {movie.title}
         <span className="ml-1 muted-label text-[0.6em]">({releaseYear})</span>
@@ -89,10 +103,27 @@ export default async function Movie({ params }) {
       <p className="mt-4 text-[17px] leading-[1.45] tracking-[-0.22px] text-[rgba(0,0,0,0.82)] dark:text-white/88">
         {movie.overview}
       </p>
-      <div className="mt-8">
-        <h3 className="section-title">Starring</h3>
-        <Persons movie={movie} imageConfig={imageConfig} />
-      </div>
+
+      <section className="mt-8">
+        <Persons entityId={movie.id} mediaType="movie" imageConfig={imageConfig} />
+      </section>
+
+      {collection?.parts?.length ? (
+        <section className="mt-8">
+          <h3 className="section-title">Collection: {collection.name}</h3>
+          <Movies movies={collection.parts} imageConfig={imageConfig} />
+        </section>
+      ) : null}
+
+      <section className="mt-8">
+        <h3 className="section-title">Similar Movies</h3>
+        <Movies movies={similar?.results ?? []} imageConfig={imageConfig} />
+      </section>
+
+      <section className="mt-8">
+        <h3 className="section-title">Recommendations</h3>
+        <Movies movies={recommendations?.results ?? []} imageConfig={imageConfig} />
+      </section>
     </>
   );
 }
