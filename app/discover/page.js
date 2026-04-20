@@ -1,5 +1,5 @@
 import Movies from "@/components/Movies";
-import { tmdbFetch } from "@/lib/tmdb";
+import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 const DISCOVERY_ENDPOINTS = {
   movie: {
@@ -60,6 +60,7 @@ export default async function DiscoverPage({ searchParams }) {
     nowPlaying,
     genres,
     discovered,
+    imageConfig,
   ] = await Promise.all([
     tmdbFetch("/trending/all/day"),
     tmdbFetch("/trending/all/week"),
@@ -71,6 +72,7 @@ export default async function DiscoverPage({ searchParams }) {
     hasFilters
       ? tmdbFetch(`/discover/${mediaType}`, { params: discoverParams })
       : Promise.resolve(null),
+    getTmdbImageConfig(),
   ]);
 
   const filteredResults = discovered?.results ?? [];
@@ -140,7 +142,7 @@ export default async function DiscoverPage({ searchParams }) {
         <>
           <h3 className="section-title mt-8">Filtered Results</h3>
           {filteredResults.length ? (
-            <Movies movies={filteredResults} mediaType={mediaType} />
+            <Movies movies={filteredResults} mediaType={mediaType} imageConfig={imageConfig} />
           ) : (
             <p className="muted-label rounded-[8px] border border-[var(--app-panel-border)] px-4 py-3 text-[14px]">
               No result found.
@@ -150,28 +152,28 @@ export default async function DiscoverPage({ searchParams }) {
       ) : null}
 
       <h3 className="section-title mt-8">Trending Today</h3>
-      <Movies movies={trendingDay?.results ?? []} />
+      <Movies movies={trendingDay?.results ?? []} imageConfig={imageConfig} />
 
       <h3 className="section-title mt-8">Trending This Week</h3>
-      <Movies movies={trendingWeek?.results ?? []} />
+      <Movies movies={trendingWeek?.results ?? []} imageConfig={imageConfig} />
 
       <h3 className="section-title mt-8">
         {mediaType === "movie" ? "Popular Movies" : "Popular TV Shows"}
       </h3>
-      <Movies movies={popular?.results ?? []} mediaType={mediaType} />
+      <Movies movies={popular?.results ?? []} mediaType={mediaType} imageConfig={imageConfig} />
 
       <h3 className="section-title mt-8">Top Rated</h3>
-      <Movies movies={topRated?.results ?? []} mediaType={mediaType} />
+      <Movies movies={topRated?.results ?? []} mediaType={mediaType} imageConfig={imageConfig} />
 
       <h3 className="section-title mt-8">
         {mediaType === "movie" ? "Upcoming" : "Airing Today"}
       </h3>
-      <Movies movies={upcoming?.results ?? []} mediaType={mediaType} />
+      <Movies movies={upcoming?.results ?? []} mediaType={mediaType} imageConfig={imageConfig} />
 
       <h3 className="section-title mt-8">
         {mediaType === "movie" ? "Now Playing" : "On The Air"}
       </h3>
-      <Movies movies={nowPlaying?.results ?? []} mediaType={mediaType} />
+      <Movies movies={nowPlaying?.results ?? []} mediaType={mediaType} imageConfig={imageConfig} />
     </>
   );
 }

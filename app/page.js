@@ -1,19 +1,27 @@
 import Movies from "@/components/Movies";
 import Image from "next/image";
 import Link from "next/link";
-import { tmdbFetch } from "@/lib/tmdb";
-import { getImageUrl } from "@/lib/tmdb";
+import {
+  getConfiguredImageUrl,
+  getTmdbImageConfig,
+  tmdbFetch,
+} from "@/lib/tmdb";
 
 export default async function Home() {
-  const [popular, trending, tvPopular, peoplePopular] = await Promise.all([
+  const [popular, trending, tvPopular, peoplePopular, imageConfig] = await Promise.all([
     tmdbFetch("/movie/popular"),
     tmdbFetch("/trending/movie/day"),
     tmdbFetch("/tv/popular"),
     tmdbFetch("/person/popular"),
+    getTmdbImageConfig(),
   ]);
 
   const featured = popular?.results?.[0];
-  const featuredBackdrop = getImageUrl(featured?.backdrop_path, "w1280");
+  const featuredBackdrop = getConfiguredImageUrl(featured?.backdrop_path, {
+    config: imageConfig,
+    type: "backdrop",
+    variant: "lg",
+  });
   const featuredYear = featured?.release_date?.split("-")[0] ?? "N/A";
 
   return (
@@ -56,16 +64,16 @@ export default async function Home() {
       ) : null}
 
       <h3 className="section-title">Popular</h3>
-      <Movies movies={popular?.results ?? []} />
+      <Movies movies={popular?.results ?? []} imageConfig={imageConfig} />
 
       <h3 className="section-title mt-8">Trending</h3>
-      <Movies movies={trending?.results ?? []} />
+      <Movies movies={trending?.results ?? []} imageConfig={imageConfig} />
 
       <h3 className="section-title mt-8">Popular TV Shows</h3>
-      <Movies movies={tvPopular?.results ?? []} mediaType="tv" />
+      <Movies movies={tvPopular?.results ?? []} mediaType="tv" imageConfig={imageConfig} />
 
       <h3 className="section-title mt-8">Popular People</h3>
-      <Movies movies={peoplePopular?.results ?? []} mediaType="person" />
+      <Movies movies={peoplePopular?.results ?? []} mediaType="person" imageConfig={imageConfig} />
     </div>
   );
 }
