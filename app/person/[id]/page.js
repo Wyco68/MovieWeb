@@ -1,16 +1,27 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { getImageUrl, tmdbFetch } from "@/lib/tmdb";
+import {
+  getConfiguredImageUrl,
+  getTmdbImageConfig,
+  tmdbFetch,
+} from "@/lib/tmdb";
 
 export default async function PersonDetail({ params }) {
   const resolvedParams = await params;
-  const person = await tmdbFetch(`/person/${resolvedParams.id}`);
+  const [person, imageConfig] = await Promise.all([
+    tmdbFetch(`/person/${resolvedParams.id}`),
+    getTmdbImageConfig(),
+  ]);
 
   if (!person?.id) {
     notFound();
   }
 
-  const profileUrl = getImageUrl(person.profile_path, "w500");
+  const profileUrl = getConfiguredImageUrl(person.profile_path, {
+    config: imageConfig,
+    type: "profile",
+    variant: "lg",
+  });
 
   return (
     <>
@@ -26,6 +37,7 @@ export default async function PersonDetail({ params }) {
               alt={`${person.name} profile`}
               width={500}
               height={750}
+              sizes="(max-width: 1024px) 70vw, 280px"
               className="w-full h-auto rounded-[8px] border border-[var(--app-panel-border)]"
               priority
             />

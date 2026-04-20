@@ -1,7 +1,11 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { getImageUrl, tmdbFetch } from "@/lib/tmdb";
+import {
+  getConfiguredImageUrl,
+  getTmdbImageConfig,
+  tmdbFetch,
+} from "@/lib/tmdb";
 
 function formatRuntime(minutes) {
   if (!minutes || Number.isNaN(Number(minutes))) {
@@ -21,7 +25,10 @@ function formatRuntime(minutes) {
 
 export default async function TVShowDetail({ params }) {
   const resolvedParams = await params;
-  const tv = await tmdbFetch(`/tv/${resolvedParams.id}`);
+  const [tv, imageConfig] = await Promise.all([
+    tmdbFetch(`/tv/${resolvedParams.id}`),
+    getTmdbImageConfig(),
+  ]);
 
   if (!tv?.id) {
     notFound();
@@ -47,7 +54,11 @@ export default async function TVShowDetail({ params }) {
     };
   });
 
-  const coverUrl = getImageUrl(tv.backdrop_path, "w1280");
+  const coverUrl = getConfiguredImageUrl(tv.backdrop_path, {
+    config: imageConfig,
+    type: "backdrop",
+    variant: "lg",
+  });
   const firstAirYear = tv.first_air_date?.split("-")[0] ?? "N/A";
   const averageRuntime = Array.isArray(tv.episode_run_time)
     ? tv.episode_run_time[0]
@@ -76,6 +87,7 @@ export default async function TVShowDetail({ params }) {
           alt={`${tv.name} backdrop`}
           width={1280}
           height={720}
+          sizes="(max-width: 768px) 100vw, 900px"
           className="w-full h-auto rounded-[6px] border border-[var(--app-panel-border)]"
           priority
         />

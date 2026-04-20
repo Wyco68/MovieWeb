@@ -1,5 +1,5 @@
 import Movies from "@/components/Movies";
-import { tmdbFetch } from "@/lib/tmdb";
+import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 function parseNumber(value) {
   const parsed = Number(value);
@@ -46,7 +46,7 @@ export default async function Search({ searchParams }) {
   const language = String(resolvedSearchParams?.language ?? "").trim();
   const rating = String(resolvedSearchParams?.rating ?? "").trim();
 
-  const [search, movieGenres, tvGenres] = await Promise.all([
+  const [search, movieGenres, tvGenres, imageConfig] = await Promise.all([
     q
       ? tmdbFetch("/search/multi", {
           params: {
@@ -58,6 +58,7 @@ export default async function Search({ searchParams }) {
       : Promise.resolve({ results: [] }),
     tmdbFetch("/genre/movie/list"),
     tmdbFetch("/genre/tv/list"),
+    getTmdbImageConfig(),
   ]);
 
   const genreMap = new Map();
@@ -140,7 +141,7 @@ export default async function Search({ searchParams }) {
         </div>
       </form>
 
-      <Movies movies={filteredResults} />
+      <Movies movies={filteredResults} imageConfig={imageConfig} />
     </>
   );
 }

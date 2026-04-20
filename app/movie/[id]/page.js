@@ -2,7 +2,11 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import Persons from "@/components/Persons";
-import { getImageUrl, tmdbFetch } from "@/lib/tmdb";
+import {
+  getConfiguredImageUrl,
+  getTmdbImageConfig,
+  tmdbFetch,
+} from "@/lib/tmdb";
 
 function formatRuntime(minutes) {
   if (!minutes || Number.isNaN(Number(minutes))) {
@@ -22,13 +26,20 @@ function formatRuntime(minutes) {
 
 export default async function Movie({ params }) {
   const resolvedParams = await params;
-  const movie = await tmdbFetch(`/movie/${resolvedParams.id}`);
+  const [movie, imageConfig] = await Promise.all([
+    tmdbFetch(`/movie/${resolvedParams.id}`),
+    getTmdbImageConfig(),
+  ]);
 
   if (!movie?.id) {
     notFound();
   }
 
-  const coverUrl = getImageUrl(movie.backdrop_path, "w1280");
+  const coverUrl = getConfiguredImageUrl(movie.backdrop_path, {
+    config: imageConfig,
+    type: "backdrop",
+    variant: "lg",
+  });
   const releaseYear = movie.release_date?.split("-")[0] ?? "N/A";
 
   return (
@@ -54,6 +65,7 @@ export default async function Movie({ params }) {
           alt={`${movie.title} backdrop`}
           width={1280}
           height={720}
+          sizes="(max-width: 768px) 100vw, 900px"
           className="w-full h-auto rounded-[6px] border border-[var(--app-panel-border)]"
           priority
         />
@@ -79,7 +91,7 @@ export default async function Movie({ params }) {
       </p>
       <div className="mt-8">
         <h3 className="section-title">Starring</h3>
-        <Persons movie={movie} />
+        <Persons movie={movie} imageConfig={imageConfig} />
       </div>
     </>
   );
