@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -25,6 +26,10 @@ export default async function PersonDetail({ params }) {
 
   return (
     <>
+      <div className="mb-4">
+        <BackButton fallbackHref="/people" label="Back" />
+      </div>
+
       <h2 className="text-[clamp(2rem,3vw,3.5rem)] leading-[1.08] font-semibold tracking-[-0.28px]">
         {person.name}
       </h2>
