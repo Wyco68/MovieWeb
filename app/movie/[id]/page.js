@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import BackButton from "@/components/BackButton";
 import Movies from "@/components/Movies";
 import Persons from "@/components/Persons";
+import TrailerPlayer from "@/components/TrailerPlayer";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -42,15 +43,40 @@ export default async function Movie({ params }) {
     type: "backdrop",
     variant: "lg",
   });
+  const posterUrl = getConfiguredImageUrl(movie.poster_path, {
+    config: imageConfig,
+    type: "poster",
+    variant: "lg",
+  });
+  const primaryImageUrl = coverUrl || posterUrl;
   const releaseYear = movie.release_date?.split("-")[0] ?? "N/A";
 
-  const [similar, recommendations, collection] = await Promise.all([
+  const [
+    similarResult,
+    recommendationsResult,
+    collectionResult,
+    keywordsResult,
+    videosResult,
+  ] = await Promise.allSettled([
     tmdbFetch(`/movie/${movie.id}/similar`),
     tmdbFetch(`/movie/${movie.id}/recommendations`),
     movie.belongs_to_collection?.id
       ? tmdbFetch(`/collection/${movie.belongs_to_collection.id}`)
       : Promise.resolve(null),
+    tmdbFetch(`/movie/${movie.id}/keywords`),
+    tmdbFetch(`/movie/${movie.id}/videos`),
   ]);
+
+  const similar = similarResult.status === "fulfilled" ? similarResult.value : { results: [] };
+  const recommendations =
+    recommendationsResult.status === "fulfilled"
+      ? recommendationsResult.value
+      : { results: [] };
+  const collection = collectionResult.status === "fulfilled" ? collectionResult.value : null;
+  const keywordsData = keywordsResult.status === "fulfilled" ? keywordsResult.value : { keywords: [] };
+  const videosData = videosResult.status === "fulfilled" ? videosResult.value : { results: [] };
+
+  const keywords = keywordsData?.keywords ?? [];
 
   return (
     <>
@@ -73,17 +99,15 @@ export default async function Movie({ params }) {
         })}
       </div>
 
-      {coverUrl ? (
-        <Image
-          src={coverUrl}
-          alt={`${movie.title} backdrop`}
-          width={1280}
-          height={720}
-          sizes="(max-width: 768px) 100vw, 900px"
-          className="w-full h-auto rounded-[6px] border border-[var(--app-panel-border)]"
-          priority
+      <div className="mt-1">
+        <TrailerPlayer
+          videos={videosData?.results ?? []}
+          title={movie.title || "Movie"}
+          fallbackImageUrl={primaryImageUrl}
+          fallbackImageAlt={`${movie.title} poster`}
+          unavailableText="Trailer unavailable or blocked in your region for this title."
         />
-      ) : null}
+      </div>
 
       <div className="mt-4 grid gap-2 text-[14px] text-[rgba(0,0,0,0.78)] dark:text-white/80 sm:grid-cols-2 lg:grid-cols-3">
         <div>
@@ -103,6 +127,23 @@ export default async function Movie({ params }) {
       <p className="mt-4 text-[17px] leading-[1.45] tracking-[-0.22px] text-[rgba(0,0,0,0.82)] dark:text-white/88">
         {movie.overview}
       </p>
+
+      <section className="mt-6">
+        <div>
+          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] muted-label">Keywords</p>
+          {keywords.length ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {keywords.map((keyword) => (
+                <Badge key={keyword.id} variant="outline" className="px-4 py-1.5 text-[15px] font-semibold tracking-[-0.12px]">
+                  {keyword.name}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-[13px] muted-label">No keywords available.</p>
+          )}
+        </div>
+      </section>
 
       <section className="mt-8">
         <Persons entityId={movie.id} mediaType="movie" imageConfig={imageConfig} />
