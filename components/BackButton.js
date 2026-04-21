@@ -3,10 +3,19 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
-export default function BackButton({ fallbackHref = "/", label = "Back" }) {
+export default function BackButton({
+  fallbackHref = "/",
+  label = "Back",
+  alwaysRedirectToFallback = false,
+}) {
   const router = useRouter();
 
   function handleBack() {
+    if (alwaysRedirectToFallback) {
+      router.push(fallbackHref);
+      return;
+    }
+
     if (window.history.length > 1) {
       router.back();
       return;

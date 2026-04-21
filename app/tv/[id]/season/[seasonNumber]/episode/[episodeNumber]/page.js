@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
+import TrailerPlayer from "@/components/TrailerPlayer";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -36,10 +37,15 @@ export default async function EpisodeDetailPage({ params }) {
   const tvId = resolvedParams.id;
   const seasonNumber = resolvedParams.seasonNumber;
   const episodeNumber = resolvedParams.episodeNumber;
+  const currentSeasonNumber = Number(seasonNumber);
+  const currentEpisodeNumber = Number(episodeNumber);
 
-  const [tv, episode, imageConfig] = await Promise.all([
+  const [tv, episode, seasonDetails, episodeVideosResult, imageConfig] = await Promise.all([
     tmdbFetch(`/tv/${tvId}`),
     tmdbFetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}`),
+    tmdbFetch(`/tv/${tvId}/season/${seasonNumber}`).catch(() => ({ episodes: [] })),
+    tmdbFetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}/videos`)
+      .catch(() => ({ results: [] })),
     getTmdbImageConfig(),
   ]);
 
@@ -52,37 +58,163 @@ export default async function EpisodeDetailPage({ params }) {
     type: "backdrop",
     variant: "md",
   });
+  const tvBackdropUrl = getConfiguredImageUrl(tv.backdrop_path, {
+    config: imageConfig,
+    type: "backdrop",
+    variant: "lg",
+  });
+  const tvPosterUrl = getConfiguredImageUrl(tv.poster_path, {
+    config: imageConfig,
+    type: "poster",
+    variant: "lg",
+  });
+  const fallbackImageUrl = stillUrl || tvBackdropUrl || tvPosterUrl;
+
+  const seasonNumbers = (tv.seasons ?? [])
+    .map((season) => Number(season?.season_number))
+    .filter((num) => Number.isInteger(num) && num > 0)
+    .sort((a, b) => a - b);
+  const seasonIndex = seasonNumbers.indexOf(currentSeasonNumber);
+  const previousSeasonNumber = seasonIndex > 0 ? seasonNumbers[seasonIndex - 1] : null;
+  const nextSeasonNumber =
+    seasonIndex !== -1 && seasonIndex < seasonNumbers.length - 1
+      ? seasonNumbers[seasonIndex + 1]
+      : null;
+
+  const episodesInSeason = (seasonDetails?.episodes ?? [])
+    .filter((ep) => Number.isInteger(Number(ep?.episode_number)))
+    .sort((a, b) => Number(a.episode_number) - Number(b.episode_number));
+
+  const currentEpisodeIndex = episodesInSeason.findIndex((ep) => {
+    return Number(ep.episode_number) === currentEpisodeNumber;
+  });
+
+  let previousEpisodeTarget =
+    currentEpisodeIndex > 0
+      ? {
+          seasonNumber: currentSeasonNumber,
+          episode: episodesInSeason[currentEpisodeIndex - 1],
+        }
+      : null;
+  let nextEpisodeTarget =
+    currentEpisodeIndex !== -1 && currentEpisodeIndex < episodesInSeason.length - 1
+      ? {
+          seasonNumber: currentSeasonNumber,
+          episode: episodesInSeason[currentEpisodeIndex + 1],
+        }
+      : null;
+
+  if (!previousEpisodeTarget || !nextEpisodeTarget) {
+    const [previousSeasonDetails, nextSeasonDetails] = await Promise.all([
+      !previousEpisodeTarget && previousSeasonNumber
+        ? tmdbFetch(`/tv/${tvId}/season/${previousSeasonNumber}`).catch(() => null)
+        : Promise.resolve(null),
+      !nextEpisodeTarget && nextSeasonNumber
+        ? tmdbFetch(`/tv/${tvId}/season/${nextSeasonNumber}`).catch(() => null)
+        : Promise.resolve(null),
+    ]);
+
+    if (!previousEpisodeTarget && previousSeasonDetails?.episodes?.length) {
+      const previousSeasonEpisodes = previousSeasonDetails.episodes
+        .filter((ep) => Number.isInteger(Number(ep?.episode_number)))
+        .sort((a, b) => Number(a.episode_number) - Number(b.episode_number));
+      const previousEpisode = previousSeasonEpisodes[previousSeasonEpisodes.length - 1];
+
+      if (previousEpisode) {
+        previousEpisodeTarget = {
+          seasonNumber: previousSeasonNumber,
+          episode: previousEpisode,
+        };
+      }
+    }
+
+    if (!nextEpisodeTarget && nextSeasonDetails?.episodes?.length) {
+      const nextSeasonEpisodes = nextSeasonDetails.episodes
+        .filter((ep) => Number.isInteger(Number(ep?.episode_number)))
+        .sort((a, b) => Number(a.episode_number) - Number(b.episode_number));
+      const nextEpisode = nextSeasonEpisodes[0];
+
+      if (nextEpisode) {
+        nextEpisodeTarget = {
+          seasonNumber: nextSeasonNumber,
+          episode: nextEpisode,
+        };
+      }
+    }
+  }
 
   return (
     <>
       <div className="mb-4">
-        <BackButton fallbackHref={`/tv/${tvId}`} label="Back" />
+        <BackButton
+          fallbackHref={`/tv/${tvId}`}
+          label="Back to Series"
+          alwaysRedirectToFallback
+        />
       </div>
 
       <h2 className="text-[clamp(2rem,3vw,3.5rem)] leading-[1.08] font-semibold tracking-[-0.28px]">
         {tv.name}
       </h2>
-      <p className="mt-2 text-[13px] muted-label font-medium">
+      <p className="mt-2 text-[13px] muted-label font-semismedium">
         {formatEpisodeCode(seasonNumber, episodeNumber)} - {episode.name || "Untitled Episode"}
       </p>
 
-      {stillUrl ? (
-        <Image
-          src={stillUrl}
-          alt={episode.name || "Episode still"}
-          width={1280}
-          height={720}
-          sizes="(max-width: 768px) 100vw, 900px"
-          className="mt-4 w-full h-auto rounded-[6px] border border-[var(--app-panel-border)]"
-          priority
+      <div className="mt-4">
+        <TrailerPlayer
+          videos={episodeVideosResult?.results ?? []}
+          title={episode.name || "Episode"}
+          fallbackImageUrl={fallbackImageUrl}
+          fallbackImageAlt={episode.name || "Episode still"}
+          unavailableText="Trailer unavailable or blocked in your region for this episode."
         />
-      ) : (
-        <div className="mt-4 w-full min-h-[260px] rounded-[6px] border border-[var(--app-panel-border)] bg-gradient-to-br from-[#5b45ff]/25 via-[#533afd]/18 to-[#0d253d]/20 dark:from-[#5b45ff]/30 dark:via-[#2f2f75]/40 dark:to-[#0d253d]/55 flex items-center justify-center">
-          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-white/80">
-            No Photo
-          </span>
-        </div>
-      )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {previousEpisodeTarget ? (
+          <Link
+            href={`/tv/${tvId}/season/${previousEpisodeTarget.seasonNumber}/episode/${previousEpisodeTarget.episode.episode_number}`}
+            className="rounded-[8px] border border-[var(--app-panel-border)] bg-[var(--app-panel-bg)] px-4 py-3 no-underline transition-transform duration-200 hover:-translate-y-[2px]"
+          >
+            <p className="text-[11px] uppercase tracking-[0.06em] muted-label">⬅ Previous Episode</p>
+            <p className="mt-1 text-[14px] font-semibold text-[rgba(0,0,0,0.88)] dark:text-white/92">
+              {formatEpisodeCode(
+                previousEpisodeTarget.seasonNumber,
+                previousEpisodeTarget.episode.episode_number,
+              )}: {previousEpisodeTarget.episode.name || "Untitled Episode"}
+            </p>
+          </Link>
+        ) : (
+          <div className="rounded-[8px] border border-[var(--app-panel-border)] bg-[var(--app-panel-bg)] px-4 py-3 opacity-65">
+            <p className="text-[11px] uppercase tracking-[0.06em] muted-label">⬅ Previous Episode</p>
+            <p className="mt-1 text-[14px] font-semibold text-[rgba(0,0,0,0.72)] dark:text-white/76">
+              Not available
+            </p>
+          </div>
+        )}
+
+        {nextEpisodeTarget ? (
+          <Link
+            href={`/tv/${tvId}/season/${nextEpisodeTarget.seasonNumber}/episode/${nextEpisodeTarget.episode.episode_number}`}
+            className="rounded-[8px] border border-[var(--app-panel-border)] bg-[var(--app-panel-bg)] px-4 py-3 no-underline text-left transition-transform duration-200 hover:-translate-y-[2px] sm:text-right"
+          >
+            <p className="text-[11px] uppercase tracking-[0.06em] muted-label">Next Episode ➡</p>
+            <p className="mt-1 text-[14px] font-semibold text-[rgba(0,0,0,0.88)] dark:text-white/92">
+              {formatEpisodeCode(
+                nextEpisodeTarget.seasonNumber,
+                nextEpisodeTarget.episode.episode_number,
+              )}: {nextEpisodeTarget.episode.name || "Untitled Episode"}
+            </p>
+          </Link>
+        ) : (
+          <div className="rounded-[8px] border border-[var(--app-panel-border)] bg-[var(--app-panel-bg)] px-4 py-3 opacity-65 sm:text-right">
+            <p className="text-[11px] uppercase tracking-[0.06em] muted-label">Next Episode ➡</p>
+            <p className="mt-1 text-[14px] font-semibold text-[rgba(0,0,0,0.72)] dark:text-white/76">
+              Not available
+            </p>
+          </div>
+        )}
+      </div>
 
       <div className="mt-4 grid gap-2 text-[14px] text-[rgba(0,0,0,0.78)] dark:text-white/80 sm:grid-cols-2 lg:grid-cols-4">
         <div>
