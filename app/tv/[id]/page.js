@@ -2,10 +2,12 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import BackButton from "@/components/BackButton";
+import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
 import Movies from "@/components/Movies";
 import Persons from "@/components/Persons";
 import SeasonEpisodesSwitcher from "@/components/SeasonEpisodesSwitcher";
 import TrailerPlayer from "@/components/TrailerPlayer";
+import WatchSources from "@/components/WatchSources";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -77,11 +79,12 @@ export default async function TVShowDetail({ params }) {
     ? tv.episode_run_time[0]
     : null;
 
-  const [similar, recommendations, keywordsData, videosData] = await Promise.all([
+  const [similar, recommendations, keywordsData, videosData, watchProviders] = await Promise.all([
     tmdbFetch(`/tv/${tv.id}/similar`),
     tmdbFetch(`/tv/${tv.id}/recommendations`),
     tmdbFetch(`/tv/${tv.id}/keywords`),
     tmdbFetch(`/tv/${tv.id}/videos`),
+    tmdbFetch(`/tv/${tv.id}/watch/providers`),
   ]);
 
   const keywords = keywordsData?.results ?? [];
@@ -163,16 +166,36 @@ export default async function TVShowDetail({ params }) {
         <Persons entityId={tv.id} mediaType="tv" imageConfig={imageConfig} />
       </section>
 
+      <WatchSources providersByRegion={watchProviders?.results ?? {}} />
+
       <SeasonEpisodesSwitcher tvId={tv.id} seasons={seasonsWithEpisodes} />
 
       <section className="mt-8">
         <h3 className="section-title">Similar Shows</h3>
-        <Movies movies={similar?.results ?? []} mediaType="tv" imageConfig={imageConfig} />
+        <InfiniteMoviesGrid
+          initialItems={similar?.results ?? []}
+          mediaType="tv"
+          imageConfig={imageConfig}
+          fetchKey="tv_similar"
+          fetchParams={{ tvId: tv.id }}
+          initialPage={similar?.page ?? 1}
+          initialTotalPages={similar?.total_pages ?? 1}
+          enableScrollLoad={false}
+        />
       </section>
 
       <section className="mt-8">
         <h3 className="section-title">Recommendations</h3>
-        <Movies movies={recommendations?.results ?? []} mediaType="tv" imageConfig={imageConfig} />
+        <InfiniteMoviesGrid
+          initialItems={recommendations?.results ?? []}
+          mediaType="tv"
+          imageConfig={imageConfig}
+          fetchKey="tv_recommendations"
+          fetchParams={{ tvId: tv.id }}
+          initialPage={recommendations?.page ?? 1}
+          initialTotalPages={recommendations?.total_pages ?? 1}
+          enableScrollLoad={false}
+        />
       </section>
     </>
   );

@@ -1,16 +1,46 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
+import Movies from "@/components/Movies";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
   tmdbFetch,
 } from "@/lib/tmdb";
 
+function buildFilmography(items) {
+  const seen = new Set();
+
+  return (items ?? [])
+    .filter((item) => item?.id && (item?.media_type === "movie" || item?.media_type === "tv"))
+    .filter((item) => {
+      const key = `${item.media_type}:${item.id}`;
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => {
+      const popularityDelta = Number(b?.popularity || 0) - Number(a?.popularity || 0);
+
+      if (popularityDelta !== 0) {
+        return popularityDelta;
+      }
+
+      const dateA = a?.release_date || a?.first_air_date || "";
+      const dateB = b?.release_date || b?.first_air_date || "";
+      return dateB.localeCompare(dateA);
+    });
+}
+
 export default async function PersonDetail({ params }) {
   const resolvedParams = await params;
-  const [person, imageConfig] = await Promise.all([
+  const [person, credits, imageConfig] = await Promise.all([
     tmdbFetch(`/person/${resolvedParams.id}`),
+    tmdbFetch(`/person/${resolvedParams.id}/combined_credits`),
     getTmdbImageConfig(),
   ]);
 
@@ -23,6 +53,7 @@ export default async function PersonDetail({ params }) {
     type: "profile",
     variant: "lg",
   });
+  const filmography = buildFilmography(credits?.cast);
 
   return (
     <>
@@ -73,6 +104,13 @@ export default async function PersonDetail({ params }) {
           </p>
         </div>
       </div>
+
+      {filmography.length ? (
+        <section className="mt-8">
+          <h3 className="section-title">Known For Filmography</h3>
+          <Movies movies={filmography} imageConfig={imageConfig} />
+        </section>
+      ) : null}
     </>
   );
 }

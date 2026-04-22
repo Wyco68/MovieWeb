@@ -2,9 +2,11 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import BackButton from "@/components/BackButton";
+import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
 import Movies from "@/components/Movies";
 import Persons from "@/components/Persons";
 import TrailerPlayer from "@/components/TrailerPlayer";
+import WatchSources from "@/components/WatchSources";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -57,6 +59,7 @@ export default async function Movie({ params }) {
     collectionResult,
     keywordsResult,
     videosResult,
+    watchProvidersResult,
   ] = await Promise.allSettled([
     tmdbFetch(`/movie/${movie.id}/similar`),
     tmdbFetch(`/movie/${movie.id}/recommendations`),
@@ -65,6 +68,7 @@ export default async function Movie({ params }) {
       : Promise.resolve(null),
     tmdbFetch(`/movie/${movie.id}/keywords`),
     tmdbFetch(`/movie/${movie.id}/videos`),
+    tmdbFetch(`/movie/${movie.id}/watch/providers`),
   ]);
 
   const similar = similarResult.status === "fulfilled" ? similarResult.value : { results: [] };
@@ -75,6 +79,8 @@ export default async function Movie({ params }) {
   const collection = collectionResult.status === "fulfilled" ? collectionResult.value : null;
   const keywordsData = keywordsResult.status === "fulfilled" ? keywordsResult.value : { keywords: [] };
   const videosData = videosResult.status === "fulfilled" ? videosResult.value : { results: [] };
+  const watchProviders =
+    watchProvidersResult.status === "fulfilled" ? watchProvidersResult.value : { results: {} };
 
   const keywords = keywordsData?.keywords ?? [];
 
@@ -149,6 +155,8 @@ export default async function Movie({ params }) {
         <Persons entityId={movie.id} mediaType="movie" imageConfig={imageConfig} />
       </section>
 
+      <WatchSources providersByRegion={watchProviders?.results ?? {}} />
+
       {collection?.parts?.length ? (
         <section className="mt-8">
           <h3 className="section-title">Collection: {collection.name}</h3>
@@ -158,12 +166,28 @@ export default async function Movie({ params }) {
 
       <section className="mt-8">
         <h3 className="section-title">Similar Movies</h3>
-        <Movies movies={similar?.results ?? []} imageConfig={imageConfig} />
+        <InfiniteMoviesGrid
+          initialItems={similar?.results ?? []}
+          imageConfig={imageConfig}
+          fetchKey="movie_similar"
+          fetchParams={{ movieId: movie.id }}
+          initialPage={similar?.page ?? 1}
+          initialTotalPages={similar?.total_pages ?? 1}
+          enableScrollLoad={false}
+        />
       </section>
 
       <section className="mt-8">
         <h3 className="section-title">Recommendations</h3>
-        <Movies movies={recommendations?.results ?? []} imageConfig={imageConfig} />
+        <InfiniteMoviesGrid
+          initialItems={recommendations?.results ?? []}
+          imageConfig={imageConfig}
+          fetchKey="movie_recommendations"
+          fetchParams={{ movieId: movie.id }}
+          initialPage={recommendations?.page ?? 1}
+          initialTotalPages={recommendations?.total_pages ?? 1}
+          enableScrollLoad={false}
+        />
       </section>
     </>
   );

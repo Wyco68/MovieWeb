@@ -1,4 +1,4 @@
-import Movies from "@/components/Movies";
+import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
 import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 function parseNumber(value) {
@@ -141,7 +141,21 @@ export default async function Search({ searchParams }) {
         </div>
       </form>
 
-      <Movies movies={filteredResults} imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={filteredResults}
+        imageConfig={imageConfig}
+        fetchKey="search_multi_filtered"
+        fetchParams={{
+          q,
+          language,
+          type: mediaType,
+          genre,
+          year,
+          rating,
+        }}
+        initialPage={search?.page ?? 1}
+        initialTotalPages={search?.total_pages ?? 1}
+      />
     </>
   );
 }
