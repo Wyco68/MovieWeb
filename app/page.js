@@ -1,22 +1,42 @@
-import Movies from "@/components/Movies";
 import Image from "next/image";
 import Link from "next/link";
+import HorizontalMediaRow from "@/components/HorizontalMediaRow";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
   tmdbFetch,
 } from "@/lib/tmdb";
 
-export default async function Home() {
-  const [popular, trending, tvPopular, peoplePopular, imageConfig] = await Promise.all([
-    tmdbFetch("/movie/popular"),
-    tmdbFetch("/trending/movie/day"),
-    tmdbFetch("/tv/popular"),
-    tmdbFetch("/person/popular"),
-    getTmdbImageConfig(),
-  ]);
+function settledSection(result) {
+  if (result?.status !== "fulfilled") {
+    return { items: [], totalPages: 1, currentPage: 1, error: true };
+  }
 
-  const featured = popular?.results?.[0];
+  return {
+    items: result.value?.results ?? [],
+    totalPages: result.value?.total_pages ?? 1,
+    currentPage: result.value?.page ?? 1,
+    error: false,
+  };
+}
+
+export default async function Home() {
+  const [popularResult, trendingResult, tvPopularResult, peoplePopularResult, imageConfigResult] =
+    await Promise.allSettled([
+      tmdbFetch("/movie/popular"),
+      tmdbFetch("/trending/movie/week"),
+      tmdbFetch("/tv/popular"),
+      tmdbFetch("/person/popular"),
+      getTmdbImageConfig(),
+    ]);
+
+  const imageConfig = imageConfigResult.status === "fulfilled" ? imageConfigResult.value : null;
+  const popular = settledSection(popularResult);
+  const trending = settledSection(trendingResult);
+  const tvPopular = settledSection(tvPopularResult);
+  const peoplePopular = settledSection(peoplePopularResult);
+
+  const featured = popular.items[0] || trending.items[0] || tvPopular.items[0];
   const featuredBackdrop = getConfiguredImageUrl(featured?.backdrop_path, {
     config: imageConfig,
     type: "backdrop",
@@ -63,17 +83,47 @@ export default async function Home() {
         </section>
       ) : null}
 
-      <h3 className="section-title">Popular</h3>
-      <Movies movies={popular?.results ?? []} imageConfig={imageConfig} />
+      <HorizontalMediaRow
+        title="Popular"
+        items={popular.items}
+        imageConfig={imageConfig}
+        error={popular.error}
+        fetchKey="popular_movies"
+        initialPage={popular.currentPage}
+        initialTotalPages={popular.totalPages}
+      />
 
-      <h3 className="section-title mt-8">Trending</h3>
-      <Movies movies={trending?.results ?? []} imageConfig={imageConfig} />
+      <HorizontalMediaRow
+        title="Trending This Week"
+        items={trending.items}
+        imageConfig={imageConfig}
+        error={trending.error}
+        fetchKey="trending_movies_week"
+        initialPage={trending.currentPage}
+        initialTotalPages={trending.totalPages}
+      />
 
-      <h3 className="section-title mt-8">Popular TV Shows</h3>
-      <Movies movies={tvPopular?.results ?? []} mediaType="tv" imageConfig={imageConfig} />
+      <HorizontalMediaRow
+        title="Popular TV Shows"
+        items={tvPopular.items}
+        mediaType="tv"
+        imageConfig={imageConfig}
+        error={tvPopular.error}
+        fetchKey="popular_tv"
+        initialPage={tvPopular.currentPage}
+        initialTotalPages={tvPopular.totalPages}
+      />
 
-      <h3 className="section-title mt-8">Popular People</h3>
-      <Movies movies={peoplePopular?.results ?? []} mediaType="person" imageConfig={imageConfig} />
+      <HorizontalMediaRow
+        title="Popular People"
+        items={peoplePopular.items}
+        mediaType="person"
+        imageConfig={imageConfig}
+        error={peoplePopular.error}
+        fetchKey="popular_people"
+        initialPage={peoplePopular.currentPage}
+        initialTotalPages={peoplePopular.totalPages}
+      />
     </div>
   );
 }

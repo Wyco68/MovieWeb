@@ -1,4 +1,4 @@
-import Movies from "@/components/Movies";
+import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
 import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 export default async function Home({ params }) {
@@ -13,7 +13,14 @@ export default async function Home({ params }) {
   return (
     <>
       <h3 className="section-title">{resolvedParams.name}</h3>
-      <Movies movies={byGenres?.results ?? []} imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={byGenres?.results ?? []}
+        imageConfig={imageConfig}
+        fetchKey="genre_movies"
+        fetchParams={{ genreId: resolvedParams.id }}
+        initialPage={byGenres?.page ?? 1}
+        initialTotalPages={byGenres?.total_pages ?? 1}
+      />
     </>
   );
 }

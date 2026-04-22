@@ -104,6 +104,10 @@
 
   --sidebar-panel-bg: #ffffff;
   --sidebar-panel-border: #e5edf5;
+
+  --app-scrollbar-track: rgba(83, 58, 253, 0.12);
+  --app-scrollbar-thumb: linear-gradient(180deg, #6a54ff, #4a34e0);
+  --app-scrollbar-thumb-hover: linear-gradient(180deg, #7a67ff, #533afd);
 }
 
 .dark {
@@ -166,9 +170,39 @@
 
   --sidebar-panel-bg: rgba(255, 255, 255, 0.04);
   --sidebar-panel-border: rgba(255, 255, 255, 0.14);
+
+  --app-scrollbar-track: rgba(255, 255, 255, 0.1);
+  --app-scrollbar-thumb: linear-gradient(180deg, #816bff, #5d46ff);
+  --app-scrollbar-thumb-hover: linear-gradient(180deg, #9481ff, #6b54ff);
 }
 
 @layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(83, 58, 253, 0.72) var(--app-scrollbar-track);
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--app-scrollbar-track);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--app-scrollbar-thumb);
+    border-radius: 999px;
+    border: 2px solid rgba(0, 0, 0, 0);
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--app-scrollbar-thumb-hover);
+  }
+
   html,
   body {
     min-height: 100%;
@@ -349,6 +383,139 @@
       rgba(0, 0, 0, 0.14) 0 20px 40px -18px;
   }
 
+  .page-nav-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .page-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 0.85rem;
+    border-radius: 6px;
+    border: 1px solid var(--app-panel-border);
+    background: var(--app-panel-bg);
+    font-size: 13px;
+    color: var(--foreground);
+    text-decoration: none;
+    transition: transform 220ms ease, border-color 220ms ease;
+  }
+
+  .page-nav-btn:hover {
+    transform: translateY(-1px);
+    border-color: #533afd;
+  }
+
+  .page-nav-btn-disabled {
+    pointer-events: none;
+    opacity: 0.45;
+  }
+
+  .page-nav-label {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--app-muted);
+  }
+
+  .row-section {
+    margin-top: 1.6rem;
+  }
+
+  .row-title-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.7rem;
+  }
+
+  .horizontal-row {
+    position: relative;
+  }
+
+  .row-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(165px, 190px);
+    gap: 0.85rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    padding: 0.15rem 0.15rem 0.8rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(83, 58, 253, 0.72) rgba(83, 58, 253, 0.12);
+  }
+
+  .row-track::-webkit-scrollbar {
+    height: 9px;
+  }
+
+  .row-track::-webkit-scrollbar-track {
+    background: rgba(83, 58, 253, 0.12);
+    border-radius: 999px;
+  }
+
+  .row-track::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #6a54ff, #4a34e0);
+    border-radius: 999px;
+  }
+
+  .row-card {
+    width: 100%;
+    scroll-snap-align: start;
+  }
+
+  .row-message {
+    border: 1px solid var(--app-panel-border);
+    border-radius: 8px;
+    padding: 0.8rem 0.95rem;
+    font-size: 14px;
+    color: var(--app-muted);
+    background: color-mix(in oklab, var(--app-panel-bg) 85%, #533afd 15%);
+  }
+
+  .row-message-error {
+    color: #ea2261;
+    background: color-mix(in oklab, var(--app-panel-bg) 82%, #ea2261 18%);
+  }
+
+  .row-load-status {
+    margin-top: 0.45rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 30px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--app-panel-border) 70%, #533afd 30%);
+    background: color-mix(in oklab, var(--app-panel-bg) 80%, #533afd 20%);
+    box-shadow: rgba(83, 58, 253, 0.22) 0 10px 20px -14px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--app-muted);
+  }
+
+  .row-load-status-loading {
+    color: color-mix(in oklab, var(--foreground) 82%, #533afd 18%);
+  }
+
+  .inline-spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 2px solid color-mix(in oklab, #533afd 30%, transparent);
+    border-top-color: #533afd;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
   .poster-frame {
     overflow: hidden;
     border-radius: 6px;
@@ -502,25 +669,122 @@
   }
 
   .loading-shell {
-    min-height: calc(100vh - 12rem);
+    min-height: calc(100vh - 10rem);
+    display: block;
+  }
+
+  .hero-skeleton {
+    width: 100%;
+    height: clamp(220px, 34vw, 330px);
+    border-radius: 8px;
+    border: 1px solid var(--app-panel-border);
+    background: linear-gradient(
+      110deg,
+      color-mix(in oklab, var(--app-panel-bg) 75%, #533afd 25%) 8%,
+      color-mix(in oklab, var(--app-panel-bg) 87%, #ffffff 13%) 18%,
+      color-mix(in oklab, var(--app-panel-bg) 75%, #533afd 25%) 33%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.3s linear infinite;
+  }
+
+  .row-skeleton {
+    display: block;
+  }
+
+  .row-skeleton-title {
+    width: 160px;
+    height: 18px;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--app-panel-bg) 70%, #533afd 30%);
+    margin-bottom: 0.75rem;
+    animation: pulse 1.25s ease-in-out infinite;
+  }
+
+  .row-skeleton-track {
     display: grid;
-    place-items: center;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(165px, 190px);
+    gap: 0.85rem;
+    overflow: hidden;
   }
 
-  .spinner {
-    width: 42px;
-    height: 42px;
-    border-radius: 999px;
-    border: 3px solid rgba(0, 113, 227, 0.2);
-    border-top-color: #0071e3;
-    animation: spin 0.85s linear infinite;
+  .row-skeleton-card {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: 8px;
+    border: 1px solid var(--app-panel-border);
+    background: linear-gradient(
+      115deg,
+      color-mix(in oklab, var(--app-panel-bg) 76%, #533afd 24%) 5%,
+      color-mix(in oklab, var(--app-panel-bg) 88%, #ffffff 12%) 20%,
+      color-mix(in oklab, var(--app-panel-bg) 76%, #533afd 24%) 35%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.2s linear infinite;
   }
 
-  .loading-label {
-    margin-top: 0.9rem;
-    font-size: 14px;
-    letter-spacing: -0.22px;
+  .error-shell {
+    min-height: calc(100vh - 14rem);
+    display: grid;
+    place-content: center;
+    gap: 0.8rem;
+    border: 1px solid var(--app-panel-border);
+    border-radius: 8px;
+    padding: clamp(1rem, 3vw, 1.8rem);
+    background: color-mix(in oklab, var(--app-panel-bg) 83%, #ea2261 17%);
+  }
+
+  .error-kicker {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #ea2261;
+  }
+
+  .error-title {
+    font-size: clamp(1.35rem, 3vw, 1.85rem);
+    line-height: 1.1;
+    color: var(--app-heading);
+  }
+
+  .error-copy {
     color: var(--app-muted);
+    font-size: 14px;
+    max-width: 56ch;
+  }
+
+  .error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .error-primary-btn,
+  .error-secondary-btn {
+    min-height: 38px;
+    padding: 0 0.9rem;
+    border-radius: 6px;
+    border: 1px solid var(--app-panel-border);
+    background: var(--app-panel-bg);
+    color: var(--foreground);
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .error-primary-btn {
+    border-color: #533afd;
+    background: #533afd;
+    color: #ffffff;
+  }
+
+  .error-secondary-btn:hover,
+  .error-primary-btn:hover {
+    transform: translateY(-1px);
   }
 
   @media (max-width: 960px) {
@@ -549,11 +813,40 @@
       right: 0.75rem;
       bottom: 0.75rem;
     }
+
+    .row-track {
+      grid-auto-columns: minmax(150px, 170px);
+    }
+
+    .row-skeleton-track {
+      grid-auto-columns: minmax(150px, 170px);
+    }
   }
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
   }
 }

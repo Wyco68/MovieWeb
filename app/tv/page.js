@@ -1,4 +1,4 @@
-import Movies from "@/components/Movies";
+import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
 import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 export default async function TVShowsPage() {
@@ -10,7 +10,14 @@ export default async function TVShowsPage() {
   return (
     <>
       <h3 className="section-title">Popular TV Shows</h3>
-      <Movies movies={data?.results ?? []} mediaType="tv" imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={data?.results ?? []}
+        mediaType="tv"
+        imageConfig={imageConfig}
+        fetchKey="tv_popular"
+        initialPage={data?.page ?? 1}
+        initialTotalPages={data?.total_pages ?? 1}
+      />
     </>
   );
 }

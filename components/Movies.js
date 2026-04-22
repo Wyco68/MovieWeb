@@ -1,6 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import { getConfiguredImageUrl } from "@/lib/tmdb";
+import { getConfiguredImageUrl } from "@/lib/tmdb-image";
 
 function resolveMediaType(item, fallbackType) {
   if (item?.media_type) {
@@ -34,11 +36,23 @@ export default function Movies({
   movies,
   mediaType: forcedMediaType,
   imageConfig,
+  layout = "grid",
+  containerRef,
+  onContainerScroll,
 }) {
   const safeMovies = Array.isArray(movies) ? movies : [];
+  const containerClass =
+    layout === "row"
+      ? "row-track"
+      : "grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4";
+
+  const cardClass =
+    layout === "row"
+      ? "movie-card row-card p-2 text-center flex flex-col"
+      : "movie-card p-2 text-center flex flex-col";
 
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+    <div className={containerClass} ref={containerRef} onScroll={onContainerScroll}>
       {safeMovies.map((item) => {
         const mediaType = resolveMediaType(item, forcedMediaType);
         const imagePath = mediaType === "person" ? item.profile_path : item.poster_path;
@@ -51,7 +65,7 @@ export default function Movies({
         return (
           <div
             key={`${mediaType}-${item.id}`}
-            className="movie-card p-2 text-center flex flex-col"
+            className={cardClass}
           >
             <Link href={getMediaLink(item, mediaType)} className="poster-frame block">
               {imagePath ? (

@@ -1,4 +1,4 @@
-import Movies from "@/components/Movies";
+import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
 import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 const DISCOVERY_ENDPOINTS = {
@@ -70,7 +70,9 @@ export default async function DiscoverPage({ searchParams }) {
     tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].nowPlaying),
     tmdbFetch(`/genre/${mediaType}/list`),
     hasFilters
-      ? tmdbFetch(`/discover/${mediaType}`, { params: discoverParams })
+      ? tmdbFetch(`/discover/${mediaType}`, {
+          params: discoverParams,
+        })
       : Promise.resolve(null),
     getTmdbImageConfig(),
   ]);
@@ -142,7 +144,21 @@ export default async function DiscoverPage({ searchParams }) {
         <>
           <h3 className="section-title mt-8">Filtered Results</h3>
           {filteredResults.length ? (
-            <Movies movies={filteredResults} mediaType={mediaType} imageConfig={imageConfig} />
+            <InfiniteMoviesGrid
+              initialItems={filteredResults}
+              mediaType={mediaType}
+              imageConfig={imageConfig}
+              fetchKey="discover_filtered"
+              fetchParams={{
+                media: mediaType,
+                genre,
+                year,
+                language,
+                rating: minRating,
+              }}
+              initialPage={discovered?.page ?? 1}
+              initialTotalPages={discovered?.total_pages ?? 1}
+            />
           ) : (
             <p className="muted-label rounded-[8px] border border-[var(--app-panel-border)] px-4 py-3 text-[14px]">
               No result found.
@@ -152,28 +168,72 @@ export default async function DiscoverPage({ searchParams }) {
       ) : null}
 
       <h3 className="section-title mt-8">Trending Today</h3>
-      <Movies movies={trendingDay?.results ?? []} imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={trendingDay?.results ?? []}
+        imageConfig={imageConfig}
+        fetchKey="discover_trending_day"
+        initialPage={trendingDay?.page ?? 1}
+        initialTotalPages={trendingDay?.total_pages ?? 1}
+      />
 
       <h3 className="section-title mt-8">Trending This Week</h3>
-      <Movies movies={trendingWeek?.results ?? []} imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={trendingWeek?.results ?? []}
+        imageConfig={imageConfig}
+        fetchKey="discover_trending_week"
+        initialPage={trendingWeek?.page ?? 1}
+        initialTotalPages={trendingWeek?.total_pages ?? 1}
+      />
 
       <h3 className="section-title mt-8">
         {mediaType === "movie" ? "Popular Movies" : "Popular TV Shows"}
       </h3>
-      <Movies movies={popular?.results ?? []} mediaType={mediaType} imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={popular?.results ?? []}
+        mediaType={mediaType}
+        imageConfig={imageConfig}
+        fetchKey="discover_section"
+        fetchParams={{ media: mediaType, section: "popular" }}
+        initialPage={popular?.page ?? 1}
+        initialTotalPages={popular?.total_pages ?? 1}
+      />
 
       <h3 className="section-title mt-8">Top Rated</h3>
-      <Movies movies={topRated?.results ?? []} mediaType={mediaType} imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={topRated?.results ?? []}
+        mediaType={mediaType}
+        imageConfig={imageConfig}
+        fetchKey="discover_section"
+        fetchParams={{ media: mediaType, section: "top_rated" }}
+        initialPage={topRated?.page ?? 1}
+        initialTotalPages={topRated?.total_pages ?? 1}
+      />
 
       <h3 className="section-title mt-8">
         {mediaType === "movie" ? "Upcoming" : "Airing Today"}
       </h3>
-      <Movies movies={upcoming?.results ?? []} mediaType={mediaType} imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={upcoming?.results ?? []}
+        mediaType={mediaType}
+        imageConfig={imageConfig}
+        fetchKey="discover_section"
+        fetchParams={{ media: mediaType, section: "upcoming" }}
+        initialPage={upcoming?.page ?? 1}
+        initialTotalPages={upcoming?.total_pages ?? 1}
+      />
 
       <h3 className="section-title mt-8">
         {mediaType === "movie" ? "Now Playing" : "On The Air"}
       </h3>
-      <Movies movies={nowPlaying?.results ?? []} mediaType={mediaType} imageConfig={imageConfig} />
+      <InfiniteMoviesGrid
+        initialItems={nowPlaying?.results ?? []}
+        mediaType={mediaType}
+        imageConfig={imageConfig}
+        fetchKey="discover_section"
+        fetchParams={{ media: mediaType, section: "now_playing" }}
+        initialPage={nowPlaying?.page ?? 1}
+        initialTotalPages={nowPlaying?.total_pages ?? 1}
+      />
     </>
   );
 }
