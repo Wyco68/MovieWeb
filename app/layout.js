@@ -1,5 +1,6 @@
 import "./globals.css";
 import Script from "next/script";
+import { Suspense } from "react";
 
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
@@ -27,7 +28,9 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <div className="app-shell">
-          <Header />
+          <Suspense fallback={<div className="app-nav mt-4 h-[68px]" />}>
+            <Header />
+          </Suspense>
           <section className="app-content">
             <Sidebar />
             <main className="content-panel">{children}</main>
