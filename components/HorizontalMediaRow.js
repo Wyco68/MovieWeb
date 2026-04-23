@@ -23,7 +23,6 @@ export default function HorizontalMediaRow({
   const rowRef = useRef(null);
   const pendingTimerRef = useRef(null);
   const hasMore = page < totalPages;
-  const MOBILE_BREAKPOINT = 960;
 
   const clearPendingTimer = useCallback(() => {
     if (pendingTimerRef.current) {
@@ -112,43 +111,6 @@ export default function HorizontalMediaRow({
     };
   }, [clearPendingTimer]);
 
-  useEffect(() => {
-    const onScroll = () => {
-      if (typeof window === "undefined" || window.innerWidth <= MOBILE_BREAKPOINT) {
-        clearPendingTimer();
-        return;
-      }
-
-      if (isLoadingMore || !hasMore) {
-        clearPendingTimer();
-        return;
-      }
-
-      const scrollTop = window.scrollY || window.pageYOffset || 0;
-      const viewportHeight = window.innerHeight || 0;
-      const fullHeight = document.documentElement.scrollHeight || 0;
-      const remaining = fullHeight - (scrollTop + viewportHeight);
-
-      if (remaining <= 420) {
-        if (!pendingTimerRef.current) {
-          pendingTimerRef.current = setTimeout(() => {
-            pendingTimerRef.current = null;
-            void loadNextPage();
-          }, 280);
-        }
-      } else {
-        clearPendingTimer();
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      clearPendingTimer();
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [clearPendingTimer, hasMore, isLoadingMore, loadNextPage]);
-
   return (
     <section className="row-section">
       <div className="row-title-wrap">
@@ -171,7 +133,7 @@ export default function HorizontalMediaRow({
           />
 
           {(isLoadingMore || loadError) && (
-            <div className={`row-load-status ${isLoadingMore ? "row-load-status-loading" : ""}`} aria-live="polite" style={{ opacity: 0, position: 'absolute' }}>
+            <div className={`row-load-status ${isLoadingMore ? "row-load-status-loading" : ""}`} aria-live="polite">
               {isLoadingMore ? <span className="inline-spinner" aria-hidden="true" /> : null}
               {isLoadingMore ? "Loading more..." : loadError ? "Could not load more. Keep scrolling to retry." : ""}
             </div>

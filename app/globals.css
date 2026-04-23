@@ -82,7 +82,11 @@
   --app-bg-base-a: #ffffff;
   --app-bg-base-b: #f8fbff;
 
-  --app-nav-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82));
+  --app-nav-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.94),
+    rgba(255, 255, 255, 0.82)
+  );
   --app-nav-border: #e5edf5;
   --app-nav-fg: #061b31;
   --app-nav-title: #061b31;
@@ -94,7 +98,11 @@
   --app-muted: #64748d;
   --app-heading: #061b31;
 
-  --hero-overlay: linear-gradient(90deg, rgba(28, 30, 84, 0.76) 15%, rgba(6, 27, 49, 0.24) 70%);
+  --hero-overlay: linear-gradient(
+    90deg,
+    rgba(28, 30, 84, 0.76) 15%,
+    rgba(6, 27, 49, 0.24) 70%
+  );
   --hero-cta-soft-bg: rgba(255, 255, 255, 0.1);
   --hero-cta-soft-border: rgba(255, 255, 255, 0.35);
   --hero-cta-soft-text: #ffffff;
@@ -148,7 +156,11 @@
   --app-bg-base-a: #1c1e54;
   --app-bg-base-b: #0d253d;
 
-  --app-nav-bg: linear-gradient(180deg, rgba(13, 37, 61, 0.82), rgba(13, 37, 61, 0.74));
+  --app-nav-bg: linear-gradient(
+    180deg,
+    rgba(13, 37, 61, 0.82),
+    rgba(13, 37, 61, 0.74)
+  );
   --app-nav-border: rgba(255, 255, 255, 0.24);
   --app-nav-fg: #ffffff;
   --app-nav-title: #ffffff;
@@ -160,7 +172,11 @@
   --app-muted: rgba(255, 255, 255, 0.68);
   --app-heading: #ffffff;
 
-  --hero-overlay: linear-gradient(90deg, rgba(28, 30, 84, 0.85) 20%, rgba(13, 37, 61, 0.45) 75%);
+  --hero-overlay: linear-gradient(
+    90deg,
+    rgba(28, 30, 84, 0.85) 20%,
+    rgba(13, 37, 61, 0.45) 75%
+  );
   --hero-cta-soft-bg: rgba(255, 255, 255, 0.12);
   --hero-cta-soft-border: rgba(255, 255, 255, 0.42);
   --hero-cta-soft-text: #ffffff;
@@ -214,22 +230,48 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: "sohne-var", "SF Pro Display", -apple-system, BlinkMacSystemFont,
-      "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family:
+      "sohne-var",
+      "SF Pro Display",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Helvetica Neue",
+      Helvetica,
+      Arial,
+      sans-serif;
     font-feature-settings: "ss01";
     letter-spacing: -0.22px;
     background-image:
-      radial-gradient(circle at 12% 8%, var(--app-bg-layer-1), rgba(255, 255, 255, 0) 35%),
-      radial-gradient(circle at 92% 0%, var(--app-bg-layer-2), rgba(0, 113, 227, 0) 32%),
-      linear-gradient(180deg, var(--app-bg-base-a) 0%, var(--app-bg-base-b) 100%);
+      radial-gradient(
+        circle at 12% 8%,
+        var(--app-bg-layer-1),
+        rgba(255, 255, 255, 0) 35%
+      ),
+      radial-gradient(
+        circle at 92% 0%,
+        var(--app-bg-layer-2),
+        rgba(0, 113, 227, 0) 32%
+      ),
+      linear-gradient(
+        180deg,
+        var(--app-bg-base-a) 0%,
+        var(--app-bg-base-b) 100%
+      );
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: "sohne-var", "SF Pro Display", -apple-system,
-      BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family:
+      "sohne-var",
+      "SF Pro Display",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Helvetica Neue",
+      Helvetica,
+      Arial,
+      sans-serif;
     font-weight: 300;
     letter-spacing: -0.64px;
     color: var(--app-heading);
@@ -273,7 +315,8 @@
     backdrop-filter: saturate(180%) blur(20px);
     border-radius: 6px;
     border: 1px solid var(--app-nav-border);
-    box-shadow: rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
+    box-shadow:
+      rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
       rgba(0, 0, 0, 0.1) 0 18px 36px -18px;
   }
 
@@ -332,7 +375,8 @@
     border-radius: 8px;
     min-height: 300px;
     border: 1px solid var(--app-panel-border);
-    box-shadow: rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
+    box-shadow:
+      rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
       rgba(0, 0, 0, 0.1) 0 18px 36px -18px;
     margin-bottom: 1.5rem;
   }
@@ -386,14 +430,18 @@
     border-radius: 6px;
     border: 1px solid var(--movie-card-border);
     background: var(--movie-card-bg);
-    box-shadow: rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
+    box-shadow:
+      rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
       rgba(0, 0, 0, 0.1) 0 18px 36px -18px;
-    transition: transform 260ms ease, box-shadow 260ms ease;
+    transition:
+      transform 260ms ease,
+      box-shadow 260ms ease;
   }
 
   .movie-card:hover {
     transform: translateY(-4px);
-    box-shadow: rgba(50, 50, 93, 0.32) 0 32px 48px -30px,
+    box-shadow:
+      rgba(50, 50, 93, 0.32) 0 32px 48px -30px,
       rgba(0, 0, 0, 0.14) 0 20px 40px -18px;
   }
 
@@ -418,7 +466,9 @@
     font-size: 13px;
     color: var(--foreground);
     text-decoration: none;
-    transition: transform 220ms ease, border-color 220ms ease;
+    transition:
+      transform 220ms ease,
+      border-color 220ms ease;
   }
 
   .page-nav-btn:hover {
@@ -507,7 +557,8 @@
     min-height: 30px;
     padding: 0.35rem 0.65rem;
     border-radius: 999px;
-    border: 1px solid color-mix(in oklab, var(--app-panel-border) 70%, #533afd 30%);
+    border: 1px solid
+      color-mix(in oklab, var(--app-panel-border) 70%, #533afd 30%);
     background: color-mix(in oklab, var(--app-panel-bg) 80%, #533afd 20%);
     box-shadow: rgba(83, 58, 253, 0.22) 0 10px 20px -14px;
     font-size: 12px;
@@ -547,7 +598,8 @@
     border-radius: 6px;
     border: 1px solid var(--sidebar-panel-border);
     background: var(--sidebar-panel-bg);
-    box-shadow: rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
+    box-shadow:
+      rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
       rgba(0, 0, 0, 0.1) 0 18px 36px -18px;
   }
 
@@ -575,7 +627,11 @@
   .sidebar-primary-link {
     border: 1px solid color-mix(in oklab, #ffffff 30%, transparent);
     background:
-      radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0) 42%),
+      radial-gradient(
+        circle at 88% 12%,
+        rgba(255, 255, 255, 0.26),
+        rgba(255, 255, 255, 0) 42%
+      ),
       linear-gradient(140deg, #533afd, #3f2cc9);
     color: #ffffff;
     font-weight: 500;
@@ -585,7 +641,11 @@
 
   .sidebar-primary-link:hover {
     background:
-      radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 46%),
+      radial-gradient(
+        circle at 88% 12%,
+        rgba(255, 255, 255, 0.32),
+        rgba(255, 255, 255, 0) 46%
+      ),
       linear-gradient(140deg, #4a34e0, #3325a8);
     transform: translateY(-2px);
     box-shadow: rgba(83, 58, 253, 0.5) 0 20px 34px -18px;
@@ -625,7 +685,11 @@
 
   .sidebar-genre-link:hover {
     background: color-mix(in oklab, var(--app-panel-bg) 70%, #533afd 30%);
-    border-color: color-mix(in oklab, var(--sidebar-panel-border) 60%, #533afd 40%);
+    border-color: color-mix(
+      in oklab,
+      var(--sidebar-panel-border) 60%,
+      #533afd 40%
+    );
   }
 
   .dark .sidebar-primary-link {
@@ -829,7 +893,11 @@
     }
 
     .hero-overlay {
-      background: linear-gradient(180deg, rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.38));
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.68),
+        rgba(0, 0, 0, 0.38)
+      );
     }
 
     .hero-copy {
@@ -898,11 +966,41 @@
     }
   }
 
-  @media (min-width: 961px) and (max-width: 1200px) {
-    .content-panel {
-      min-height: 0;
-      height: auto;
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
     }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 0% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+  .row-skeleton-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 961px) and (max-width: 1200px) {
+  .content-panel {
+    min-height: 0;
+    height: auto;
   }
 }
 
