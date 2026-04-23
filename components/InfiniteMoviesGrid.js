@@ -18,7 +18,6 @@ export default function InfiniteMoviesGrid({
   batchSize = 30,
   enableScrollLoad = true,
 }) {
-  const MOBILE_BREAKPOINT = 960;
   const [items, setItems] = useState(Array.isArray(initialItems) ? initialItems : []);
   const [totalPages, setTotalPages] = useState(Math.max(1, initialTotalPages));
   const [nextPageToFetch, setNextPageToFetch] = useState(Math.max(1, initialPage) + 1);
@@ -27,6 +26,7 @@ export default function InfiniteMoviesGrid({
   const pendingTimerRef = useRef(null);
   const bufferRef = useRef([]);
   const isMountedRef = useRef(false);
+  const sentinelRef = useRef(null);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -168,51 +168,50 @@ export default function InfiniteMoviesGrid({
   }, [batchSize, enableScrollLoad, fetchKey, hasMore, isLoadingMore, items.length, loadNextPage]);
 
   useEffect(() => {
-    if (!fetchKey || !enableScrollLoad) {
+    if (!fetchKey || !enableScrollLoad || typeof window === "undefined") {
       return undefined;
     }
 
-    const scheduleNextLoad = () => {
-      if (pendingTimerRef.current || isLoadingMore || !hasMore) {
-        return;
-      }
+    const target = sentinelRef.current;
 
-      pendingTimerRef.current = setTimeout(() => {
-        pendingTimerRef.current = null;
-        if (!isMountedRef.current) {
+    if (!target) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+
+        if (!entry?.isIntersecting) {
           return;
         }
-        void loadNextPage();
-      }, 0);
-    };
 
-    const onScroll = () => {
-      if (typeof window === "undefined" || window.innerWidth <= MOBILE_BREAKPOINT) {
-        return;
-      }
+        if (pendingTimerRef.current || isLoadingMore || !hasMore || !isMountedRef.current) {
+          return;
+        }
 
-      if (isLoadingMore || !hasMore || !isMountedRef.current) {
-        clearPendingTimer();
-        return;
-      }
+        pendingTimerRef.current = setTimeout(() => {
+          pendingTimerRef.current = null;
 
-      const scrollTop = window.scrollY || window.pageYOffset || 0;
-      const viewportHeight = window.innerHeight || 0;
-      const fullHeight = document.documentElement.scrollHeight || 0;
-      const remaining = fullHeight - (scrollTop + viewportHeight);
+          if (!isMountedRef.current || isLoadingMore || !hasMore) {
+            return;
+          }
 
-      if (remaining <= 380) {
-        scheduleNextLoad();
-      } else {
-        clearPendingTimer();
-      }
-    };
+          void loadNextPage();
+        }, 220);
+      },
+      {
+        root: null,
+        threshold: 0,
+        rootMargin: "0px 0px 420px 0px",
+      },
+    );
 
-    window.addEventListener("scroll", onScroll, { passive: true });
+    observer.observe(target);
 
     return () => {
       clearPendingTimer();
-      window.removeEventListener("scroll", onScroll);
+      observer.disconnect();
     };
   }, [clearPendingTimer, enableScrollLoad, fetchKey, hasMore, isLoadingMore, loadNextPage]);
 
@@ -230,6 +229,8 @@ export default function InfiniteMoviesGrid({
               : ""}
         </div>
       )}
+
+      {enableScrollLoad ? <div ref={sentinelRef} className="load-sentinel" aria-hidden="true" /> : null}
     </>
   );
 }

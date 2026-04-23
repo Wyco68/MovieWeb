@@ -44,12 +44,12 @@ export default function Movies({
   const containerClass =
     layout === "row"
       ? "row-track"
-      : "grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5";
+      : "grid grid-cols-4 gap-1.5 sm:grid-cols-4 md:gap-2 lg:grid-cols-5 xl:grid-cols-6";
 
   const cardClass =
     layout === "row"
-      ? "movie-card row-card p-2 text-center flex flex-col"
-      : "movie-card p-2 text-center flex flex-col";
+      ? "movie-card row-card p-1.5 text-center flex flex-col"
+      : "movie-card p-1 text-center flex flex-col";
 
   return (
     <div className={containerClass} ref={containerRef} onScroll={onContainerScroll}>
@@ -73,28 +73,31 @@ export default function Movies({
                   src={getConfiguredImageUrl(imagePath, {
                     config: imageConfig,
                     type: mediaType === "person" ? "profile" : "poster",
-                    variant: "md",
+                    variant: layout === "row" ? "sm" : "sm",
                   })}
                   alt={`${displayTitle} poster`}
-                  width={342}
-                  height={513}
+                  width={120}
+                  height={180}
                   loading="lazy"
-                  sizes="(max-width: 640px) 45vw, (max-width: 1024px) 28vw, 180px"
+                  sizes={layout === "row" 
+                    ? "(max-width: 640px) 30vw, (max-width: 1024px) 18vw, 120px"
+                    : "(max-width: 480px) 22vw, (max-width: 640px) 18vw, (max-width: 768px) 15vw, (max-width: 1024px) 14vw, 180px"
+                  }
                   className="w-full transition-transform duration-300 hover:scale-[1.04]"
                 />
               ) : (
-                <div className="w-full h-[300px] rounded-lg bg-gradient-to-br from-[#5b45ff]/25 via-[#533afd]/18 to-[#0d253d]/20 dark:from-[#5b45ff]/30 dark:via-[#2f2f75]/40 dark:to-[#0d253d]/55 border border-white/20 dark:border-white/15 flex items-center justify-center">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-white/78">
+                <div className={`w-full rounded-lg bg-gradient-to-br from-[#5b45ff]/25 via-[#533afd]/18 to-[#0d253d]/20 dark:from-[#5b45ff]/30 dark:via-[#2f2f75]/40 dark:to-[#0d253d]/55 border border-white/20 dark:border-white/15 flex items-center justify-center ${layout === "row" ? "h-[200px]" : "h-[140px]"}`}>
+                  <span className={`font-medium uppercase tracking-[0.08em] text-white/78 ${layout === "row" ? "text-[10px]" : "text-[9px]"}`}>
                     No Photo
                   </span>
                 </div>
               )}
             </Link>
-            <div className="px-1 py-2">
-              <h4 className="mt-1 text-[15px] leading-tight font-semibold tracking-[-0.2px]">
+            <div className={`px-0.5 ${layout === "row" ? "py-1" : "py-1"}`}>
+              <h4 className={`mt-0.5 leading-tight font-semibold tracking-[-0.2px] ${layout === "row" ? "text-[13px]" : "text-[11px]"}`}>
                 {displayTitle}
               </h4>
-              <span className="text-[12px] muted-label">
+              <span className={`muted-label ${layout === "row" ? "text-[11px]" : "text-[10px]"}`}>
                 {subtitle}
               </span>
             </div>
