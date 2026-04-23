@@ -1,20 +1,63 @@
+"use client";
+
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 
-export default async function Header() {
-  async function search(formData) {
-    "use server";
+export default function Header() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const initialQuery = useMemo(() => String(searchParams?.get("q") ?? ""), [searchParams]);
+  const [query, setQuery] = useState(initialQuery);
+  const lastPushedRef = useRef(initialQuery.trim());
 
-    const q = String(formData.get("q") ?? "").trim();
+  useEffect(() => {
+    setQuery(initialQuery);
+    lastPushedRef.current = initialQuery.trim();
+  }, [initialQuery]);
 
-    if (!q) {
-      redirect("/");
+  useEffect(() => {
+    if (pathname !== "/search") {
+      return undefined;
     }
 
-    const query = new URLSearchParams({ q }).toString();
-    redirect(`/search?${query}`);
+    const trimmed = query.trim();
+
+    if (!trimmed || trimmed === lastPushedRef.current) {
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams(searchParams?.toString() || "");
+      params.set("q", trimmed);
+      router.replace(`/search?${params.toString()}`);
+      lastPushedRef.current = trimmed;
+    }, 450);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [pathname, query, router, searchParams]);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const trimmed = query.trim();
+
+    if (!trimmed) {
+      router.push("/");
+      return;
+    }
+
+    if (trimmed === lastPushedRef.current && pathname === "/search") {
+      return;
+    }
+
+    const params = new URLSearchParams({ q: trimmed });
+    router.push(`/search?${params.toString()}`);
+    lastPushedRef.current = trimmed;
   }
 
   return (
@@ -27,8 +70,14 @@ export default async function Header() {
           Cinematic Explorer
         </span>
       </Link>
-      <form action={search} className="flex gap-2 w-full max-w-[460px] items-center">
-        <Input type="text" name="q" placeholder="Search movies, TV shows, people" />
+      <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-[460px] items-center">
+        <Input
+          type="text"
+          name="q"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search movies, TV shows, people"
+        />
         <Button type="submit" className="min-w-[104px] font-medium">
           Find
         </Button>
