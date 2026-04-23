@@ -35,6 +35,9 @@ export default function RootLayout({ children }) {
             <Sidebar />
             <main className="content-panel">{children}</main>
           </section>
+          <footer className="app-footer" aria-label="Site footer">
+            NextFlix By Wyco &copy; {new Date().getFullYear()} | Built with Next.js and TMDb API
+          </footer>
         </div>
         <div className="theme-fab">
           <ThemeToggle />

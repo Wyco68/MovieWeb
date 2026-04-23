@@ -250,6 +250,20 @@
     padding-bottom: 1.25rem;
   }
 
+  .app-footer {
+    margin-top: 1rem;
+    border: 1px solid var(--app-panel-border);
+    border-radius: 8px;
+    background: var(--app-panel-bg);
+    color: var(--app-muted);
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.75rem 1rem;
+    box-shadow: rgba(23, 23, 23, 0.06) 0 8px 20px;
+  }
+
   .app-nav {
     position: sticky;
     top: 0.75rem;
@@ -790,10 +804,19 @@
   @media (max-width: 960px) {
     .app-shell {
       width: calc(100vw - 1rem);
+      min-height: auto;
+      padding-bottom: 0.5rem;
     }
 
     .app-content {
       grid-template-columns: 1fr;
+      min-height: auto;
+      flex: 0 0 auto;
+    }
+
+    .content-panel {
+      height: auto;
+      min-height: 0;
     }
 
     .sidebar-panel {
@@ -809,17 +832,76 @@
       background: linear-gradient(180deg, rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0.38));
     }
 
+    .hero-copy {
+      font-size: 14px;
+      max-width: none;
+    }
+
+    .page-nav-strip {
+      justify-content: space-between;
+      gap: 0.45rem;
+    }
+
+    .page-nav-btn {
+      min-height: 34px;
+      padding: 0 0.7rem;
+      font-size: 12px;
+      flex: 1 1 auto;
+    }
+
+    .page-nav-label {
+      width: 100%;
+      text-align: center;
+      order: -1;
+    }
+
     .theme-fab {
       right: 0.75rem;
       bottom: 0.75rem;
     }
 
     .row-track {
-      grid-auto-columns: minmax(150px, 170px);
+      grid-auto-flow: row;
+      grid-auto-columns: unset;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: visible;
+      scroll-snap-type: none;
+      padding: 0;
+      gap: 0.75rem;
+    }
+
+    .row-card {
+      scroll-snap-align: none;
     }
 
     .row-skeleton-track {
-      grid-auto-columns: minmax(150px, 170px);
+      grid-auto-flow: row;
+      grid-auto-columns: unset;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .app-footer {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      padding: 0.6rem 0.75rem;
+    }
+  }
+
+  @media (min-width: 640px) and (max-width: 960px) {
+    .row-track {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .row-skeleton-track {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 961px) and (max-width: 1200px) {
+    .content-panel {
+      min-height: 0;
+      height: auto;
     }
   }
 }

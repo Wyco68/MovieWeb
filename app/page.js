@@ -7,6 +7,20 @@ import {
   tmdbFetch,
 } from "@/lib/tmdb";
 
+function asPage(value) {
+  const parsed = Number.parseInt(String(value || "1"), 10);
+
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 1;
+  }
+
+  if (parsed > 500) {
+    return 500;
+  }
+
+  return parsed;
+}
+
 function settledSection(result) {
   if (result?.status !== "fulfilled") {
     return { items: [], totalPages: 1, currentPage: 1, error: true };
@@ -20,13 +34,16 @@ function settledSection(result) {
   };
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
+  const page = asPage(resolvedSearchParams?.page);
+
   const [popularResult, trendingResult, tvPopularResult, peoplePopularResult, imageConfigResult] =
     await Promise.allSettled([
-      tmdbFetch("/movie/popular"),
-      tmdbFetch("/trending/movie/week"),
-      tmdbFetch("/tv/popular"),
-      tmdbFetch("/person/popular"),
+      tmdbFetch("/movie/popular", { params: { page } }),
+      tmdbFetch("/trending/movie/week", { params: { page } }),
+      tmdbFetch("/tv/popular", { params: { page } }),
+      tmdbFetch("/person/popular", { params: { page } }),
       getTmdbImageConfig(),
     ]);
 
