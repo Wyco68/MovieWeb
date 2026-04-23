@@ -25,6 +25,14 @@ function applyTheme(theme) {
   root.classList.toggle("dark", theme === "dark");
 }
 
+function persistTheme(theme) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, theme);
+  } catch {
+    // Ignore storage persistence failures (privacy mode/restricted storage).
+  }
+}
+
 export default function ThemeToggle() {
   const [theme, setTheme] = useState("light");
   const [mounted, setMounted] = useState(false);
@@ -40,7 +48,7 @@ export default function ThemeToggle() {
     const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     applyTheme(nextTheme);
-    window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    persistTheme(nextTheme);
   }
 
   return (

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { tmdbFetch } from "@/lib/tmdb";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const ROW_ENDPOINTS = {
   popular_movies: "/movie/popular",
@@ -23,6 +24,24 @@ function clampPage(rawPage) {
 }
 
 export async function GET(request) {
+  const rate = applyRateLimit(request, {
+    bucketName: "api-rows",
+    maxRequests: 120,
+    windowMs: 60_000,
+  });
+
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please retry later." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rate.retryAfterSeconds),
+        },
+      },
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const key = String(searchParams.get("key") || "");
   const page = clampPage(searchParams.get("page"));

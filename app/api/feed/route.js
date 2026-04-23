@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { tmdbFetch } from "@/lib/tmdb";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const DISCOVERY_ENDPOINTS = {
   movie: {
@@ -33,6 +34,20 @@ function clampPage(rawPage) {
 function parseNumber(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function isValidId(value) {
+  return /^\d+$/.test(String(value || "").trim());
+}
+
+function isValidLanguage(value) {
+  const language = String(value || "").trim();
+
+  if (!language) {
+    return true;
+  }
+
+  return /^[a-z]{2}(-[A-Z]{2})?$/.test(language);
 }
 
 function normalizeYear(item) {
@@ -77,6 +92,10 @@ async function fetchByKey(key, page, searchParams) {
   if (key === "genre_movies") {
     const genreId = String(searchParams.get("genreId") || "").trim();
 
+    if (!isValidId(genreId)) {
+      throw new Error("Invalid genre id.");
+    }
+
     return tmdbFetch("/discover/movie", {
       params: {
         with_genres: genreId || undefined,
@@ -111,6 +130,14 @@ async function fetchByKey(key, page, searchParams) {
     const genre = String(searchParams.get("genre") || "").trim();
     const year = String(searchParams.get("year") || "").trim();
     const language = String(searchParams.get("language") || "").trim();
+        if (!["movie", "tv"].includes(media)) {
+          throw new Error("Invalid media type.");
+        }
+
+        if (!isValidLanguage(language)) {
+          throw new Error("Invalid language format.");
+        }
+
     const rating = String(searchParams.get("rating") || "").trim();
 
     const params = {
@@ -137,6 +164,18 @@ async function fetchByKey(key, page, searchParams) {
     const query = String(searchParams.get("q") || "").trim();
     const language = String(searchParams.get("language") || "").trim();
     const type = String(searchParams.get("type") || "all");
+        if (!query || query.length > 120) {
+          throw new Error("Invalid query.");
+        }
+
+        if (!isValidLanguage(language)) {
+          throw new Error("Invalid language format.");
+        }
+
+        if (!["all", "movie", "tv", "person"].includes(type)) {
+          throw new Error("Invalid search type.");
+        }
+
     const genre = String(searchParams.get("genre") || "").trim();
     const year = String(searchParams.get("year") || "").trim();
     const rating = String(searchParams.get("rating") || "").trim();
@@ -165,6 +204,10 @@ async function fetchByKey(key, page, searchParams) {
   if (key === "movie_similar") {
     const movieId = String(searchParams.get("movieId") || "").trim();
 
+    if (!isValidId(movieId)) {
+      throw new Error("Invalid movie id.");
+    }
+
     return tmdbFetch(`/movie/${movieId}/similar`, {
       params: { page },
       revalidate: 300,
@@ -173,6 +216,10 @@ async function fetchByKey(key, page, searchParams) {
 
   if (key === "movie_recommendations") {
     const movieId = String(searchParams.get("movieId") || "").trim();
+
+    if (!isValidId(movieId)) {
+      throw new Error("Invalid movie id.");
+    }
 
     return tmdbFetch(`/movie/${movieId}/recommendations`, {
       params: { page },
@@ -183,6 +230,10 @@ async function fetchByKey(key, page, searchParams) {
   if (key === "tv_similar") {
     const tvId = String(searchParams.get("tvId") || "").trim();
 
+    if (!isValidId(tvId)) {
+      throw new Error("Invalid tv id.");
+    }
+
     return tmdbFetch(`/tv/${tvId}/similar`, {
       params: { page },
       revalidate: 300,
@@ -191,6 +242,10 @@ async function fetchByKey(key, page, searchParams) {
 
   if (key === "tv_recommendations") {
     const tvId = String(searchParams.get("tvId") || "").trim();
+
+    if (!isValidId(tvId)) {
+      throw new Error("Invalid tv id.");
+    }
 
     return tmdbFetch(`/tv/${tvId}/recommendations`, {
       params: { page },
@@ -202,6 +257,24 @@ async function fetchByKey(key, page, searchParams) {
 }
 
 export async function GET(request) {
+  const rate = applyRateLimit(request, {
+    bucketName: "api-feed",
+    maxRequests: 90,
+    windowMs: 60_000,
+  });
+
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please retry later." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rate.retryAfterSeconds),
+        },
+      },
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const key = String(searchParams.get("key") || "");
   const page = clampPage(searchParams.get("page"));
