@@ -18,6 +18,7 @@ export default function InfiniteMoviesGrid({
   batchSize = 30,
   enableScrollLoad = true,
 }) {
+  const MOBILE_BREAKPOINT = 960;
   const [items, setItems] = useState(Array.isArray(initialItems) ? initialItems : []);
   const [totalPages, setTotalPages] = useState(Math.max(1, initialTotalPages));
   const [nextPageToFetch, setNextPageToFetch] = useState(Math.max(1, initialPage) + 1);
@@ -186,6 +187,10 @@ export default function InfiniteMoviesGrid({
     };
 
     const onScroll = () => {
+      if (typeof window === "undefined" || window.innerWidth <= MOBILE_BREAKPOINT) {
+        return;
+      }
+
       if (isLoadingMore || !hasMore || !isMountedRef.current) {
         clearPendingTimer();
         return;

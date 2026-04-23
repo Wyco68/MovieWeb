@@ -44,7 +44,7 @@ export default function Movies({
   const containerClass =
     layout === "row"
       ? "row-track"
-      : "grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4";
+      : "grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5";
 
   const cardClass =
     layout === "row"
