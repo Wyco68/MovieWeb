@@ -3,48 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
-let youtubeApiPromise;
-
-function loadYouTubeIframeApi() {
-  if (typeof window === "undefined") {
-    return Promise.resolve(null);
-  }
-
-  if (window.YT?.Player) {
-    return Promise.resolve(window.YT);
-  }
-
-  if (!youtubeApiPromise) {
-    youtubeApiPromise = new Promise((resolve) => {
-      const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
-
-      if (!existingScript) {
-        const script = document.createElement("script");
-        script.src = "https://www.youtube.com/iframe_api";
-        script.async = true;
-        document.head.appendChild(script);
-      }
-
-      const previousReady = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        if (typeof previousReady === "function") {
-          previousReady();
-        }
-        resolve(window.YT);
-      };
-
-      const readyCheck = window.setInterval(() => {
-        if (window.YT?.Player) {
-          window.clearInterval(readyCheck);
-          resolve(window.YT);
-        }
-      }, 100);
-    });
-  }
-
-  return youtubeApiPromise;
-}
-
 function sortYoutubeVideos(videos) {
   const candidates = (videos ?? []).filter((video) => {
     return video?.site === "YouTube" && video?.key;
@@ -109,7 +67,7 @@ export default function TrailerPlayer({
   const [activeIndex, setActiveIndex] = useState(0);
   const [showFallback, setShowFallback] = useState(sortedVideos.length === 0);
   const failedKeysRef = useRef(new Set());
-  const playerHostRef = useRef(null);
+  const activeKeyRef = useRef(null);
 
   useEffect(() => {
     failedKeysRef.current = new Set();
@@ -117,69 +75,53 @@ export default function TrailerPlayer({
     setShowFallback(sortedVideos.length === 0);
   }, [sortedVideos]);
 
+  const activeVideo = sortedVideos[activeIndex] ?? null;
+
   useEffect(() => {
-    if (showFallback || sortedVideos.length === 0) {
-      return undefined;
-    }
+    activeKeyRef.current = activeVideo?.key ?? null;
+  }, [activeVideo]);
 
-    const activeVideo = sortedVideos[activeIndex];
-    if (!activeVideo?.key) {
+  const moveToNextCandidate = (key) => {
+    const failedKeys = failedKeysRef.current;
+    failedKeys.add(key);
+
+    const nextIndex = sortedVideos.findIndex(
+      (video) => !failedKeys.has(video.key)
+    );
+    if (nextIndex === -1) {
       setShowFallback(true);
-      return undefined;
+      return;
     }
 
-    let cancelled = false;
-    let player;
+    setActiveIndex(nextIndex);
+  };
+  useEffect(() => {
+    if (showFallback) return;
 
-    const moveToNextCandidate = () => {
-      const failedKeys = failedKeysRef.current;
-      failedKeys.add(activeVideo.key);
-
-      const nextIndex = sortedVideos.findIndex((video) => !failedKeys.has(video.key));
-      if (nextIndex === -1) {
-        setShowFallback(true);
+    const handleMessage = (event) => {
+      if (
+        event.origin !== "https://www.youtube.com" &&
+        event.origin !== "https://www.youtube-nocookie.com"
+      ) {
         return;
       }
 
-      setActiveIndex(nextIndex);
-    };
+      try {
+        const data =
+          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
 
-    loadYouTubeIframeApi()
-      .then((YT) => {
-        if (cancelled || !YT?.Player || !playerHostRef.current) {
-          return;
+        if (data?.event === "onError" && activeKeyRef.current) {
+          moveToNextCandidate(activeKeyRef.current);
         }
-
-        playerHostRef.current.innerHTML = "";
-        player = new YT.Player(playerHostRef.current, {
-          width: "100%",
-          height: "100%",
-          videoId: activeVideo.key,
-          playerVars: {
-            rel: 0,
-            modestbranding: 1,
-            playsinline: 1,
-          },
-          events: {
-            onError: () => {
-              moveToNextCandidate();
-            },
-          },
-        });
-      })
-      .catch(() => {
-        setShowFallback(true);
-      });
-
-    return () => {
-      cancelled = true;
-      if (player?.destroy) {
-        player.destroy();
+      } catch {
       }
     };
-  }, [activeIndex, showFallback, sortedVideos]);
 
-  if (showFallback) {
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [showFallback, sortedVideos]);
+
+  if (showFallback || !activeVideo?.key) {
     return (
       <>
         {fallbackImageUrl ? (
@@ -199,15 +141,29 @@ export default function TrailerPlayer({
             </span>
           </div>
         )}
-        <p className="mt-2 text-[13px] font-medium muted-label">{unavailableText}</p>
+        {unavailableText && (
+          <p className="row-message mt-2 text-[13px]">{unavailableText}</p>
+        )}
       </>
     );
   }
 
+  const embedUrl =
+    `https://www.youtube-nocookie.com/embed/${activeVideo.key}` +
+    `?rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+
   return (
     <div className="overflow-hidden rounded-[8px] border border-[var(--app-panel-border)] bg-black">
       <div className="relative w-full pt-[56.25%]">
-        <div ref={playerHostRef} className="absolute inset-0 h-full w-full" aria-label={`${title} trailer`} />
+        <iframe
+          key={activeVideo.key}
+          src={embedUrl}
+          className="absolute inset-0 h-full w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          title={`${title} trailer`}
+          aria-label={`${title} trailer`}
+        />
       </div>
     </div>
   );
