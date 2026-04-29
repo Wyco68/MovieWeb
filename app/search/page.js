@@ -82,7 +82,7 @@ export default async function Search({ searchParams }) {
     <>
       <h3 className="section-title">Search: {q || "-"}</h3>
 
-      <form className="mb-4 mt-3 grid gap-3 rounded-[8px] border border-[var(--app-panel-border)] p-4 md:grid-cols-5">
+      <form className="mb-4 mt-3 grid grid-cols-1 gap-3 rounded-[8px] border border-[var(--app-panel-border)] p-4 sm:grid-cols-2 lg:grid-cols-5">
         <input type="hidden" name="q" defaultValue={q} />
 
         <select
@@ -125,7 +125,7 @@ export default async function Search({ searchParams }) {
           className="h-10 rounded-[6px] border border-[var(--app-panel-border)] bg-transparent px-3 text-[14px]"
         />
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
           <input
             name="rating"
             defaultValue={rating}
@@ -134,7 +134,7 @@ export default async function Search({ searchParams }) {
           />
           <button
             type="submit"
-            className="h-10 rounded-[6px] bg-[#533afd] px-4 text-[14px] font-medium text-white"
+            className="h-10 rounded-[6px] bg-[#533afd] px-4 text-[14px] font-medium text-white sm:px-5"
           >
             Apply
           </button>

@@ -1,7 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Movies from "@/components/Movies";
+
+const PREFETCH_THRESHOLD = 800;
+
+const SCROLL_DEBOUNCE_MS = 150;
 
 export default function HorizontalMediaRow({
   title,
@@ -11,6 +15,7 @@ export default function HorizontalMediaRow({
   error,
   emptyLabel,
   fetchKey,
+  fetchParams,
   initialPage = 1,
   initialTotalPages = 1,
 }) {
@@ -22,7 +27,16 @@ export default function HorizontalMediaRow({
   const [loadError, setLoadError] = useState(false);
   const rowRef = useRef(null);
   const pendingTimerRef = useRef(null);
+  const abortRef = useRef(null);
   const hasMore = page < totalPages;
+
+  const extraQs = useMemo(() => {
+    if (!fetchParams) return "";
+    const pairs = Object.entries(fetchParams)
+      .filter(([, v]) => v !== undefined && v !== null && v !== "")
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
+    return pairs.length ? "&" + pairs.join("&") : "";
+  }, [fetchParams]);
 
   const clearPendingTimer = useCallback(() => {
     if (pendingTimerRef.current) {
@@ -32,38 +46,39 @@ export default function HorizontalMediaRow({
   }, []);
 
   const loadNextPage = useCallback(async () => {
-    if (!fetchKey || isLoadingMore || !hasMore) {
-      return;
-    }
+    if (!fetchKey || isLoadingMore || !hasMore) return;
 
     const nextPage = page + 1;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setIsLoadingMore(true);
     setLoadError(false);
 
     try {
-      const response = await fetch(`/api/rows?key=${encodeURIComponent(fetchKey)}&page=${nextPage}`);
+      const url = `/api/rows?key=${encodeURIComponent(fetchKey)}&page=${nextPage}${extraQs}`;
+      const response = await fetch(url, { signal: controller.signal });
 
-      if (!response.ok) {
-        throw new Error(`Row request failed: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Row request failed: ${response.status}`);
 
       const payload = await response.json();
       const nextItems = Array.isArray(payload?.results) ? payload.results : [];
       const nextTotalPages = Number.parseInt(String(payload?.total_pages ?? totalPages), 10);
 
       setItems((current) => {
-        const seen = new Set(current.map((item) => `${item?.media_type || mediaType || "movie"}:${item?.id}`));
+        const seen = new Set(
+          current.map((item) => `${item?.media_type || mediaType || "movie"}:${item?.id}`),
+        );
         const merged = [...current];
 
-        nextItems.forEach((item) => {
+        for (const item of nextItems) {
           const itemKey = `${item?.media_type || mediaType || "movie"}:${item?.id}`;
-
           if (!seen.has(itemKey)) {
             seen.add(itemKey);
             merged.push(item);
           }
-        });
+        }
 
         return merged;
       });
@@ -73,12 +88,14 @@ export default function HorizontalMediaRow({
       if (Number.isFinite(nextTotalPages) && nextTotalPages > 0) {
         setTotalPages(nextTotalPages);
       }
-    } catch {
-      setLoadError(true);
+    } catch (err) {
+      if (err?.name !== "AbortError") {
+        setLoadError(true);
+      }
     } finally {
       setIsLoadingMore(false);
     }
-  }, [fetchKey, hasMore, isLoadingMore, mediaType, page, totalPages]);
+  }, [extraQs, fetchKey, hasMore, isLoadingMore, mediaType, page, totalPages]);
 
   const handleRowScroll = useCallback(
     (event) => {
@@ -91,12 +108,12 @@ export default function HorizontalMediaRow({
 
       const remaining = element.scrollWidth - element.scrollLeft - element.clientWidth;
 
-      if (remaining <= 220) {
+      if (remaining <= PREFETCH_THRESHOLD) {
         if (!pendingTimerRef.current) {
           pendingTimerRef.current = setTimeout(() => {
             pendingTimerRef.current = null;
             void loadNextPage();
-          }, 0);
+          }, SCROLL_DEBOUNCE_MS);
         }
       } else {
         clearPendingTimer();
@@ -108,6 +125,7 @@ export default function HorizontalMediaRow({
   useEffect(() => {
     return () => {
       clearPendingTimer();
+      abortRef.current?.abort();
     };
   }, [clearPendingTimer]);
 
@@ -133,9 +151,16 @@ export default function HorizontalMediaRow({
           />
 
           {(isLoadingMore || loadError) && (
-            <div className={`row-load-status ${isLoadingMore ? "row-load-status-loading" : ""}`} aria-live="polite">
+            <div
+              className={`row-load-status ${isLoadingMore ? "row-load-status-loading" : ""}`}
+              aria-live="polite"
+            >
               {isLoadingMore ? <span className="inline-spinner" aria-hidden="true" /> : null}
-              {isLoadingMore ? "Loading more..." : loadError ? "Could not load more. Keep scrolling to retry." : ""}
+              {isLoadingMore
+                ? "Loading more..."
+                : loadError
+                  ? "Could not load more. Keep scrolling to retry."
+                  : ""}
             </div>
           )}
         </div>

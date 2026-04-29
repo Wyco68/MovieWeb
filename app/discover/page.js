@@ -1,4 +1,4 @@
-import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
+import HorizontalMediaRow from "@/components/HorizontalMediaRow";
 import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 const DISCOVERY_ENDPOINTS = {
@@ -85,7 +85,7 @@ export default async function DiscoverPage({ searchParams }) {
         Discovery
       </h2>
 
-      <form className="mt-4 grid gap-3 rounded-[8px] border border-[var(--app-panel-border)] p-4 md:grid-cols-5">
+      <form className="mt-4 grid grid-cols-1 gap-3 rounded-[8px] border border-[var(--app-panel-border)] p-4 sm:grid-cols-2 lg:grid-cols-5">
         <select
           name="media"
           defaultValue={mediaType}
@@ -124,7 +124,7 @@ export default async function DiscoverPage({ searchParams }) {
           className="h-10 rounded-[6px] border border-[var(--app-panel-border)] bg-transparent px-3 text-[14px]"
         />
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
           <input
             name="rating"
             defaultValue={minRating}
@@ -133,7 +133,7 @@ export default async function DiscoverPage({ searchParams }) {
           />
           <button
             type="submit"
-            className="h-10 rounded-[6px] bg-[#533afd] px-4 text-[14px] font-medium text-white"
+            className="h-10 rounded-[6px] bg-[#533afd] px-4 text-[14px] font-medium text-white sm:px-5"
           >
             Apply
           </button>
@@ -142,93 +142,90 @@ export default async function DiscoverPage({ searchParams }) {
 
       {hasFilters ? (
         <>
-          <h3 className="section-title mt-8">Filtered Results</h3>
-          {filteredResults.length ? (
-            <InfiniteMoviesGrid
-              initialItems={filteredResults}
-              mediaType={mediaType}
-              imageConfig={imageConfig}
-              fetchKey="discover_filtered"
-              fetchParams={{
-                media: mediaType,
-                genre,
-                year,
-                language,
-                rating: minRating,
-              }}
-              initialPage={discovered?.page ?? 1}
-              initialTotalPages={discovered?.total_pages ?? 1}
-            />
-          ) : (
-            <p className="muted-label rounded-[8px] border border-[var(--app-panel-border)] px-4 py-3 text-[14px]">
-              No result found.
-            </p>
-          )}
+        <HorizontalMediaRow
+            title="Filtered Results"
+            items={filteredResults}
+            mediaType={mediaType}
+            imageConfig={imageConfig}
+            error={false}
+            fetchKey="discover_filtered"
+            fetchParams={{
+              media: mediaType,
+              with_genres: genre || undefined,
+              with_original_language: language || undefined,
+              "vote_average.gte": parseNumber(minRating),
+              ...(mediaType === "movie"
+                ? { primary_release_year: year || undefined }
+                : { first_air_date_year: year || undefined }),
+              sort_by: "popularity.desc",
+            }}
+            initialPage={discovered?.page ?? 1}
+            initialTotalPages={discovered?.total_pages ?? 1}
+          />
         </>
       ) : null}
-
-      <h3 className="section-title mt-8">Trending Today</h3>
-      <InfiniteMoviesGrid
-        initialItems={trendingDay?.results ?? []}
+      <HorizontalMediaRow
+        title="Trending Today"
+        items={trendingDay?.results ?? []}
         imageConfig={imageConfig}
+        error={false}
         fetchKey="discover_trending_day"
         initialPage={trendingDay?.page ?? 1}
         initialTotalPages={trendingDay?.total_pages ?? 1}
       />
 
-      <h3 className="section-title mt-8">Trending This Week</h3>
-      <InfiniteMoviesGrid
-        initialItems={trendingWeek?.results ?? []}
+      <HorizontalMediaRow
+        title="Trending This Week"
+        items={trendingWeek?.results ?? []}
         imageConfig={imageConfig}
+        error={false}
         fetchKey="discover_trending_week"
         initialPage={trendingWeek?.page ?? 1}
         initialTotalPages={trendingWeek?.total_pages ?? 1}
       />
 
-      <h3 className="section-title mt-8">
-        {mediaType === "movie" ? "Popular Movies" : "Popular TV Shows"}
-      </h3>
-      <InfiniteMoviesGrid
-        initialItems={popular?.results ?? []}
+      <HorizontalMediaRow
+        title="Popular"
+        items={popular?.results ?? []}
         mediaType={mediaType}
         imageConfig={imageConfig}
+        error={false}
         fetchKey="discover_section"
         fetchParams={{ media: mediaType, section: "popular" }}
         initialPage={popular?.page ?? 1}
         initialTotalPages={popular?.total_pages ?? 1}
       />
 
-      <h3 className="section-title mt-8">Top Rated</h3>
-      <InfiniteMoviesGrid
-        initialItems={topRated?.results ?? []}
+      <HorizontalMediaRow
+        title="Top Rated"
+        items={topRated?.results ?? []}
         mediaType={mediaType}
         imageConfig={imageConfig}
+        error={false}
         fetchKey="discover_section"
         fetchParams={{ media: mediaType, section: "top_rated" }}
         initialPage={topRated?.page ?? 1}
         initialTotalPages={topRated?.total_pages ?? 1}
       />
 
-      <h3 className="section-title mt-8">
-        {mediaType === "movie" ? "Upcoming" : "Airing Today"}
-      </h3>
-      <InfiniteMoviesGrid
-        initialItems={upcoming?.results ?? []}
+      <HorizontalMediaRow
+        title={mediaType === "movie" ? "Upcoming" : "Airing Today"}
+        items={upcoming?.results ?? []}
         mediaType={mediaType}
         imageConfig={imageConfig}
+        error={false}
         fetchKey="discover_section"
         fetchParams={{ media: mediaType, section: "upcoming" }}
         initialPage={upcoming?.page ?? 1}
         initialTotalPages={upcoming?.total_pages ?? 1}
       />
 
-      <h3 className="section-title mt-8">
-        {mediaType === "movie" ? "Now Playing" : "On The Air"}
-      </h3>
-      <InfiniteMoviesGrid
-        initialItems={nowPlaying?.results ?? []}
+      <HorizontalMediaRow
+        title={mediaType === "movie" ? "Now Playing" : "On The Air"}
+        items={nowPlaying?.results ?? []}
         mediaType={mediaType}
         imageConfig={imageConfig}
+        error={false}
         fetchKey="discover_section"
         fetchParams={{ media: mediaType, section: "now_playing" }}
         initialPage={nowPlaying?.page ?? 1}
