@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
+import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -32,12 +33,11 @@ export default function RootLayout({ children }) {
             <Header />
           </Suspense>
           <section className="app-content">
-            <Sidebar />
+            <MobileSidebarDrawer>
+              <Sidebar />
+            </MobileSidebarDrawer>
             <main className="content-panel">{children}</main>
           </section>
-          <footer className="app-footer" aria-label="Site footer">
-            NextFlix By Wyco &copy; {new Date().getFullYear()} | Built with Next.js and TMDb API
-          </footer>
         </div>
         <div className="theme-fab">
           <ThemeToggle />
