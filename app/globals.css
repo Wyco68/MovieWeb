@@ -445,6 +445,30 @@
       rgba(0, 0, 0, 0.14) 0 20px 40px -18px;
   }
 
+  .movie-card-loading {
+    pointer-events: none;
+  }
+
+  .movie-card-loading:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .loading-poster-placeholder {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid color-mix(in oklab, var(--movie-card-border) 82%, var(--app-panel-border) 18%);
+    background: color-mix(in oklab, var(--movie-card-bg) 86%, var(--app-panel-border) 14%);
+  }
+
+  .loading-card-label {
+    display: inline-block;
+  }
+
+  .loading-card-skeleton {
+    display: none;
+  }
+
   .page-nav-strip {
     display: flex;
     flex-wrap: wrap;
@@ -601,6 +625,55 @@
     box-shadow:
       rgba(50, 50, 93, 0.25) 0 30px 45px -30px,
       rgba(0, 0, 0, 0.1) 0 18px 36px -18px;
+  }
+
+  .mobile-sidebar-drawer {
+    min-height: 0;
+  }
+
+  .mobile-sidebar-toggle {
+    width: 100%;
+    min-height: 40px;
+    border-radius: 6px;
+    border: 1px solid var(--app-panel-border);
+    background: color-mix(in oklab, var(--app-panel-bg) 78%, #533afd 22%);
+    color: var(--foreground);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.65rem;
+  }
+
+  .mobile-sidebar-panel-wrap {
+    display: block;
+  }
+
+  @media (min-width: 961px) {
+    .mobile-sidebar-toggle {
+      display: none;
+    }
+
+    .mobile-sidebar-panel-wrap {
+      height: 100%;
+      min-height: 0;
+    }
+
+    .mobile-sidebar-drawer {
+      position: sticky;
+      top: 5.6rem;
+      align-self: start;
+      height: calc(100vh - 6.5rem);
+    }
+
+    .mobile-sidebar-drawer .sidebar-panel {
+      position: static;
+      top: auto;
+      height: 100%;
+      max-height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
   }
 
   .sidebar-panel::-webkit-scrollbar {
@@ -888,6 +961,18 @@
       max-height: none;
     }
 
+    .mobile-sidebar-drawer .sidebar-panel {
+      margin-bottom: 0.8rem;
+    }
+
+    .mobile-sidebar-panel-wrap {
+      display: none;
+    }
+
+    .mobile-sidebar-panel-wrap.mobile-sidebar-panel-wrap-open {
+      display: block;
+    }
+
     .hero-panel {
       min-height: 270px;
     }
@@ -931,22 +1016,59 @@
     .row-track {
       grid-auto-flow: row;
       grid-auto-columns: unset;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       overflow: visible;
       scroll-snap-type: none;
       padding: 0;
-      gap: 0.75rem;
+      gap: 0.45rem;
     }
 
     .row-card {
       scroll-snap-align: none;
     }
 
+    .row-track .movie-card {
+      padding: 0.22rem;
+    }
+
+    .row-track .movie-card h4 {
+      font-size: 9px;
+    }
+
+    .row-track .movie-card .muted-label {
+      font-size: 8px;
+    }
+
+    .movie-card-loading .loading-card-label {
+      display: none;
+    }
+
+    .movie-card-loading .loading-card-skeleton {
+      display: block;
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        color-mix(in oklab, var(--movie-card-bg) 86%, var(--app-panel-border) 14%) 0%,
+        color-mix(in oklab, var(--movie-card-bg) 70%, var(--app-panel-border) 30%) 48%,
+        color-mix(in oklab, var(--movie-card-bg) 86%, var(--app-panel-border) 14%) 100%
+      );
+      background-size: 220% 100%;
+      animation: shimmer 1.15s ease-in-out infinite;
+    }
+
+    .movie-card-loading .loading-card-skeleton-sub {
+      margin-top: 0.25rem;
+      width: 70%;
+      height: 8px;
+    }
+
     .row-skeleton-track {
       grid-auto-flow: row;
       grid-auto-columns: unset;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.45rem;
     }
 
     .app-footer {
@@ -958,11 +1080,11 @@
 
   @media (min-width: 640px) and (max-width: 960px) {
     .row-track {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .row-skeleton-track {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 

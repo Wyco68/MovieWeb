@@ -6,6 +6,7 @@ import Movies from "@/components/Movies";
 const PREFETCH_THRESHOLD = 800;
 
 const SCROLL_DEBOUNCE_MS = 150;
+const MOBILE_BREAKPOINT_QUERY = "(max-width: 960px)";
 
 export default function HorizontalMediaRow({
   title,
@@ -25,10 +26,12 @@ export default function HorizontalMediaRow({
   const [totalPages, setTotalPages] = useState(Math.max(1, initialTotalPages));
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const rowRef = useRef(null);
   const pendingTimerRef = useRef(null);
   const abortRef = useRef(null);
   const hasMore = page < totalPages;
+  const hasPrevious = page > 1;
 
   const extraQs = useMemo(() => {
     if (!fetchParams) return "";
@@ -45,63 +48,89 @@ export default function HorizontalMediaRow({
     }
   }, []);
 
-  const loadNextPage = useCallback(async () => {
-    if (!fetchKey || isLoadingMore || !hasMore) return;
+  const fetchPage = useCallback(
+    async (targetPage, { appendItems } = { appendItems: true }) => {
+      if (!fetchKey || isLoadingMore) return;
+      if (!Number.isFinite(targetPage) || targetPage < 1) return;
 
-    const nextPage = page + 1;
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+      const safeTargetPage = Math.max(1, Math.min(targetPage, totalPages));
+      if (safeTargetPage === page && !appendItems) return;
 
-    setIsLoadingMore(true);
-    setLoadError(false);
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    try {
-      const url = `/api/rows?key=${encodeURIComponent(fetchKey)}&page=${nextPage}${extraQs}`;
-      const response = await fetch(url, { signal: controller.signal });
+      setIsLoadingMore(true);
+      setLoadError(false);
 
-      if (!response.ok) throw new Error(`Row request failed: ${response.status}`);
+      try {
+        const url = `/api/rows?key=${encodeURIComponent(fetchKey)}&page=${safeTargetPage}${extraQs}`;
+        const response = await fetch(url, { signal: controller.signal });
 
-      const payload = await response.json();
-      const nextItems = Array.isArray(payload?.results) ? payload.results : [];
-      const nextTotalPages = Number.parseInt(String(payload?.total_pages ?? totalPages), 10);
+        if (!response.ok) throw new Error(`Row request failed: ${response.status}`);
 
-      setItems((current) => {
-        const seen = new Set(
-          current.map((item) => `${item?.media_type || mediaType || "movie"}:${item?.id}`),
-        );
-        const merged = [...current];
+        const payload = await response.json();
+        const nextItems = Array.isArray(payload?.results) ? payload.results : [];
+        const nextTotalPages = Number.parseInt(String(payload?.total_pages ?? totalPages), 10);
+        const resolvedPage = Number.parseInt(String(payload?.page ?? safeTargetPage), 10) || safeTargetPage;
 
-        for (const item of nextItems) {
-          const itemKey = `${item?.media_type || mediaType || "movie"}:${item?.id}`;
-          if (!seen.has(itemKey)) {
-            seen.add(itemKey);
-            merged.push(item);
+        setItems((current) => {
+          if (!appendItems) {
+            return nextItems;
           }
+
+          const seen = new Set(
+            current.map((item) => `${item?.media_type || mediaType || "movie"}:${item?.id}`),
+          );
+          const merged = [...current];
+
+          for (const item of nextItems) {
+            const itemKey = `${item?.media_type || mediaType || "movie"}:${item?.id}`;
+            if (!seen.has(itemKey)) {
+              seen.add(itemKey);
+              merged.push(item);
+            }
+          }
+
+          return merged;
+        });
+
+        setPage(resolvedPage);
+
+        if (Number.isFinite(nextTotalPages) && nextTotalPages > 0) {
+          setTotalPages(nextTotalPages);
         }
-
-        return merged;
-      });
-
-      setPage(Number.parseInt(String(payload?.page ?? nextPage), 10) || nextPage);
-
-      if (Number.isFinite(nextTotalPages) && nextTotalPages > 0) {
-        setTotalPages(nextTotalPages);
+      } catch (err) {
+        if (err?.name !== "AbortError") {
+          setLoadError(true);
+        }
+      } finally {
+        setIsLoadingMore(false);
       }
-    } catch (err) {
-      if (err?.name !== "AbortError") {
-        setLoadError(true);
+    },
+    [extraQs, fetchKey, isLoadingMore, mediaType, page, totalPages],
+  );
+
+  const loadNextPage = useCallback(async () => {
+    if (!hasMore) return;
+    await fetchPage(page + 1, { appendItems: true });
+  }, [fetchPage, hasMore, page]);
+
+  const loadMobilePage = useCallback(
+    async (targetPage) => {
+      await fetchPage(targetPage, { appendItems: false });
+      if (rowRef.current) {
+        rowRef.current.scrollLeft = 0;
       }
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [extraQs, fetchKey, hasMore, isLoadingMore, mediaType, page, totalPages]);
+    },
+    [fetchPage],
+  );
 
   const handleRowScroll = useCallback(
     (event) => {
       const element = event.currentTarget;
 
-      if (!element || isLoadingMore || !hasMore) {
+      if (isMobileViewport || !element || isLoadingMore || !hasMore) {
         clearPendingTimer();
         return;
       }
@@ -119,8 +148,33 @@ export default function HorizontalMediaRow({
         clearPendingTimer();
       }
     },
-    [clearPendingTimer, hasMore, isLoadingMore, loadNextPage],
+    [clearPendingTimer, hasMore, isLoadingMore, isMobileViewport, loadNextPage],
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
+    const updateViewport = () => {
+      setIsMobileViewport(mediaQuery.matches);
+    };
+
+    updateViewport();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updateViewport);
+      return () => {
+        mediaQuery.removeEventListener("change", updateViewport);
+      };
+    }
+
+    mediaQuery.addListener(updateViewport);
+    return () => {
+      mediaQuery.removeListener(updateViewport);
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -148,21 +202,46 @@ export default function HorizontalMediaRow({
             layout="row"
             containerRef={rowRef}
             onContainerScroll={handleRowScroll}
+            showLoadingCard={isLoadingMore && !isMobileViewport}
           />
 
-          {(isLoadingMore || loadError) && (
-            <div
-              className={`row-load-status ${isLoadingMore ? "row-load-status-loading" : ""}`}
-              aria-live="polite"
-            >
-              {isLoadingMore ? <span className="inline-spinner" aria-hidden="true" /> : null}
-              {isLoadingMore
-                ? "Loading more..."
-                : loadError
-                  ? "Could not load more. Keep scrolling to retry."
-                  : ""}
+          {loadError ? (
+            <div className="row-message mt-2">
+              {isMobileViewport
+                ? "Could not load. Use Previous/Next to retry."
+                : "Could not load more. Keep scrolling to retry."}
             </div>
-          )}
+          ) : null}
+          {isMobileViewport ? (
+            <div className="mt-2 flex items-center justify-between gap-2 md:hidden">
+              <button
+                type="button"
+                onClick={() => void loadMobilePage(page - 1)}
+                disabled={!hasPrevious || isLoadingMore}
+                className="h-9 rounded-[6px] border border-[var(--app-panel-border)] px-3 text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                Previous
+              </button>
+              <span className="muted-label inline-flex min-h-5 items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase">
+                {isLoadingMore ? (
+                  <>
+                    <span className="inline-spinner" aria-hidden="true" />
+                    Loading...
+                  </>
+                ) : (
+                  <>Page {page} / {totalPages}</>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() => void loadMobilePage(page + 1)}
+                disabled={!hasMore || isLoadingMore}
+                className="h-9 rounded-[6px] bg-[#533afd] px-3 text-[12px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                Next
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="row-message">{emptyLabel || "No results available."}</div>

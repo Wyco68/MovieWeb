@@ -39,6 +39,7 @@ export default function Movies({
   layout = "grid",
   containerRef,
   onContainerScroll,
+  showLoadingCard = false,
 }) {
   const safeMovies = Array.isArray(movies) ? movies : [];
   const containerClass =
@@ -50,6 +51,10 @@ export default function Movies({
     layout === "row"
       ? "movie-card row-card p-1.5 text-center flex flex-col"
       : "movie-card p-1 text-center flex flex-col";
+  const loadingPosterClass =
+    layout === "row"
+      ? "loading-poster-placeholder h-[200px]"
+      : "loading-poster-placeholder h-[140px]";
 
   return (
     <div className={containerClass} ref={containerRef} onScroll={onContainerScroll}>
@@ -104,6 +109,28 @@ export default function Movies({
           </div>
         );
       })}
+
+      {showLoadingCard ? (
+        <div
+          key="loading-card"
+          className={`${cardClass} movie-card-loading`}
+          aria-live="polite"
+          aria-label="Loading more items"
+        >
+          <div className="poster-frame block" aria-hidden="true">
+            <div className={loadingPosterClass} />
+          </div>
+          <div className={`px-0.5 ${layout === "row" ? "py-1" : "py-1"}`}>
+            <h4 className={`mt-0.5 leading-tight font-semibold tracking-[-0.2px] ${layout === "row" ? "text-[13px]" : "text-[11px]"}`}>
+              <span className="loading-card-label">Loading</span>
+              <span className="loading-card-skeleton" aria-hidden="true" />
+            </h4>
+            <span className={`muted-label ${layout === "row" ? "text-[11px]" : "text-[10px]"}`}>
+              <span className="loading-card-skeleton loading-card-skeleton-sub" aria-hidden="true" />
+            </span>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

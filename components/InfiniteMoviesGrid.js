@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Movies from "@/components/Movies";
 
+const MOBILE_BREAKPOINT_QUERY = "(max-width: 960px)";
+
 function createItemKey(item, fallbackMediaType) {
   return `${item?.media_type || fallbackMediaType || "movie"}:${item?.id}`;
 }
@@ -23,6 +25,7 @@ export default function InfiniteMoviesGrid({
   const [nextPageToFetch, setNextPageToFetch] = useState(Math.max(1, initialPage) + 1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const pendingTimerRef = useRef(null);
   const bufferRef = useRef([]);
   const isMountedRef = useRef(false);
@@ -32,6 +35,31 @@ export default function InfiniteMoviesGrid({
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
+    const updateViewport = () => {
+      setIsMobileViewport(mediaQuery.matches);
+    };
+
+    updateViewport();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updateViewport);
+      return () => {
+        mediaQuery.removeEventListener("change", updateViewport);
+      };
+    }
+
+    mediaQuery.addListener(updateViewport);
+    return () => {
+      mediaQuery.removeListener(updateViewport);
     };
   }, []);
 
@@ -217,18 +245,21 @@ export default function InfiniteMoviesGrid({
 
   return (
     <>
-      <Movies movies={items} mediaType={mediaType} imageConfig={imageConfig} />
+      <Movies
+        movies={items}
+        mediaType={mediaType}
+        imageConfig={imageConfig}
+        showLoadingCard={isLoadingMore && !isMobileViewport}
+      />
 
-      {(isLoadingMore || loadError) && (
-        <div className={`row-load-status mt-2 ${isLoadingMore ? "row-load-status-loading" : ""}`} aria-live="polite">
-          {isLoadingMore ? <span className="inline-spinner" aria-hidden="true" /> : null}
-          {isLoadingMore
-            ? "Loading more titles..."
-            : loadError
-              ? "Could not load more. Keep scrolling to retry."
-              : ""}
+      {isMobileViewport && isLoadingMore ? (
+        <div className="row-load-status mt-2 row-load-status-loading" aria-live="polite">
+          <span className="inline-spinner" aria-hidden="true" />
+          Loading more titles...
         </div>
-      )}
+      ) : null}
+
+      {loadError ? <div className="row-message mt-2">Could not load more. Keep scrolling to retry.</div> : null}
 
       {enableScrollLoad ? <div ref={sentinelRef} className="load-sentinel" aria-hidden="true" /> : null}
     </>
