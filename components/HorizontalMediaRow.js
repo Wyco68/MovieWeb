@@ -5,7 +5,11 @@ import Movies from "@/components/Movies";
 
 const PREFETCH_THRESHOLD = 800;
 const SCROLL_DEBOUNCE_MS = 150;
-const MOBILE_BREAKPOINT_QUERY = "(max-width: 960px)";
+
+/** Prev/next grid only for 1025–1200px; phones use horizontal strip + scroll loading. */
+function isCompactGridViewport(width) {
+  return width >= 1025 && width <= 1200;
+}
 
 const PAGE_LIMIT_NOTICE =
   "This project requests at most 5 pages per list from the API, so you will not see more than that here.";
@@ -146,17 +150,11 @@ export default function HorizontalMediaRow({
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
-    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
-    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
+    const updateViewport = () => setIsMobileViewport(isCompactGridViewport(window.innerWidth));
     updateViewport();
 
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", updateViewport);
-      return () => mediaQuery.removeEventListener("change", updateViewport);
-    }
-
-    mediaQuery.addListener(updateViewport);
-    return () => mediaQuery.removeListener(updateViewport);
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
   useEffect(() => {
@@ -198,7 +196,7 @@ export default function HorizontalMediaRow({
           ) : null}
 
           {isMobileViewport ? (
-            <div className="mt-2 flex items-center justify-between gap-2 md:hidden">
+            <div className="mt-2 flex items-center justify-between gap-2">
               <button
                 type="button"
                 onClick={() => void loadMobilePage(page - 1)}

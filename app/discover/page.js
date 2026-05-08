@@ -81,7 +81,7 @@ export default async function DiscoverPage({ searchParams }) {
         Discovery
       </h2>
 
-      <form className="mt-4 grid grid-cols-1 gap-3 rounded-[8px] border border-[var(--app-panel-border)] p-4 sm:grid-cols-2 lg:grid-cols-5">
+      <form className="mt-4 grid min-w-0 max-w-full grid-cols-1 gap-3 rounded-[8px] border border-[var(--app-panel-border)] p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <select
           name="media"
           defaultValue={mediaType}
@@ -118,12 +118,12 @@ export default async function DiscoverPage({ searchParams }) {
           className="h-10 rounded-[6px] border border-[var(--app-panel-border)] bg-transparent px-3 text-[14px]"
         />
 
-        <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
+        <div className="flex min-w-0 gap-2 sm:col-span-2 lg:col-span-2 xl:col-span-1">
           <input
             name="rating"
             defaultValue={minRating}
             placeholder="Min Rating"
-            className="h-10 flex-1 rounded-[6px] border border-[var(--app-panel-border)] bg-transparent px-3 text-[14px]"
+            className="h-10 min-w-0 flex-1 rounded-[6px] border border-[var(--app-panel-border)] bg-transparent px-3 text-[14px]"
           />
           <button
             type="submit"

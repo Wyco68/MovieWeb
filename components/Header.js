@@ -52,8 +52,8 @@ export default function Header() {
   }
 
   return (
-    <nav className="app-nav mt-4 px-4 py-3 flex items-center justify-between gap-3">
-      <Link href="/" className="no-underline hover:opacity-90 flex flex-col">
+    <nav className="app-nav mt-4 px-4 py-3 flex min-w-0 items-center justify-between gap-3">
+      <Link href="/" className="no-underline hover:opacity-90 flex min-w-0 shrink-0 flex-col">
         <span className="nav-brand-title font-semibold text-[18px] tracking-[-0.26px]">
           NextFlix
         </span>
@@ -61,7 +61,10 @@ export default function Header() {
           Cinematic Explorer
         </span>
       </Link>
-      <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-[460px] items-center">
+      <form
+        onSubmit={handleSubmit}
+        className="flex min-w-0 max-w-full flex-1 gap-2 items-center sm:max-w-[460px]"
+      >
         <Input
           type="text"
           name="q"
