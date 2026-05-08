@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Movies from "@/components/Movies";
 
-const MOBILE_BREAKPOINT_QUERY = "(max-width: 960px)";
+const PAGE_LIMIT_NOTICE =
+  "This project requests at most 5 pages per list from the API, so you will not see more than that here.";
 
 function createItemKey(item, fallbackMediaType) {
   return `${item?.media_type || fallbackMediaType || "movie"}:${item?.id}`;
@@ -25,7 +26,6 @@ export default function InfiniteMoviesGrid({
   const [nextPageToFetch, setNextPageToFetch] = useState(Math.max(1, initialPage) + 1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const pendingTimerRef = useRef(null);
   const bufferRef = useRef([]);
   const isMountedRef = useRef(false);
@@ -33,39 +33,11 @@ export default function InfiniteMoviesGrid({
 
   useEffect(() => {
     isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-
-    const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
-    const updateViewport = () => {
-      setIsMobileViewport(mediaQuery.matches);
-    };
-
-    updateViewport();
-
-    if (typeof mediaQuery.addEventListener === "function") {
-      mediaQuery.addEventListener("change", updateViewport);
-      return () => {
-        mediaQuery.removeEventListener("change", updateViewport);
-      };
-    }
-
-    mediaQuery.addListener(updateViewport);
-    return () => {
-      mediaQuery.removeListener(updateViewport);
-    };
+    return () => { isMountedRef.current = false; };
   }, []);
 
   const paramsString = useMemo(() => {
     const search = new URLSearchParams();
-
     search.set("key", fetchKey);
 
     Object.entries(fetchParams ?? {}).forEach(([key, value]) => {
@@ -87,18 +59,14 @@ export default function InfiniteMoviesGrid({
   }, []);
 
   const loadNextPage = useCallback(async (requestedCount = batchSize) => {
-    if (!fetchKey || isLoadingMore || !hasMore) {
-      return;
-    }
+    if (!fetchKey || isLoadingMore || !hasMore || loadError) return;
 
-    const safeBatchSize = Number.isFinite(Number(batchSize))
-      ? Math.max(1, Math.floor(Number(batchSize)))
-      : 30;
+    const safeBatchSize = Number.isFinite(Number(batchSize)) ? Math.max(1, Math.floor(Number(batchSize))) : 30;
     const pageSize = 20;
     const parsedRequestedCount = Number.isFinite(Number(requestedCount))
       ? Math.max(1, Math.floor(Number(requestedCount)))
       : safeBatchSize;
-    const requiredCount = parsedRequestedCount;
+
     const collected = [];
     let pageCursor = nextPageToFetch;
     let knownTotalPages = totalPages;
@@ -109,62 +77,42 @@ export default function InfiniteMoviesGrid({
     try {
       const seen = new Set(items.map((item) => createItemKey(item, mediaType)));
 
-      while (bufferRef.current.length && collected.length < requiredCount) {
+      while (bufferRef.current.length && collected.length < parsedRequestedCount) {
         const candidate = bufferRef.current.shift();
         const candidateKey = createItemKey(candidate, mediaType);
-
         if (!seen.has(candidateKey)) {
           seen.add(candidateKey);
           collected.push(candidate);
         }
       }
 
-      while (collected.length < requiredCount && pageCursor <= knownTotalPages) {
-        const response = await fetch(`/api/feed?${paramsString}&page=${pageCursor}`);
-
-        if (!response.ok) {
-          throw new Error(`Feed request failed: ${response.status}`);
-        }
+      while (collected.length < parsedRequestedCount && pageCursor <= knownTotalPages) {
+        const response = await fetch(`/api/tmdb?${paramsString}&page=${pageCursor}`);
+        if (!response.ok) throw new Error(`Feed request failed: ${response.status}`);
 
         const payload = await response.json();
         const pageItems = Array.isArray(payload?.results) ? payload.results : [];
         const nextTotalPages = Number.parseInt(String(payload?.total_pages ?? knownTotalPages), 10);
 
-        if (Number.isFinite(nextTotalPages) && nextTotalPages > 0) {
-          knownTotalPages = nextTotalPages;
-        }
-
+        if (Number.isFinite(nextTotalPages) && nextTotalPages > 0) knownTotalPages = nextTotalPages;
         pageCursor += 1;
 
         pageItems.forEach((candidate) => {
           const candidateKey = createItemKey(candidate, mediaType);
-
-          if (seen.has(candidateKey)) {
-            return;
-          }
-
+          if (seen.has(candidateKey)) return;
           seen.add(candidateKey);
 
-          if (collected.length < requiredCount) {
+          if (collected.length < parsedRequestedCount) {
             collected.push(candidate);
           } else {
             bufferRef.current.push(candidate);
           }
         });
 
-        if (!pageItems.length || pageItems.length < pageSize) {
-          break;
-        }
+        if (!pageItems.length || pageItems.length < pageSize) break;
       }
 
-      setItems((current) => {
-        const merged = [...current];
-
-        merged.push(...collected);
-
-        return merged;
-      });
-
+      setItems((current) => [...current, ...collected]);
       setNextPageToFetch(pageCursor);
       setTotalPages(knownTotalPages);
     } catch {
@@ -172,76 +120,52 @@ export default function InfiniteMoviesGrid({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [batchSize, fetchKey, hasMore, isLoadingMore, items, mediaType, nextPageToFetch, paramsString, totalPages]);
+  }, [batchSize, fetchKey, hasMore, isLoadingMore, loadError, items, mediaType, nextPageToFetch, paramsString, totalPages]);
 
   const hasInitiallyLoadedRef = useRef(false);
 
   useEffect(() => {
-    if (!fetchKey || isLoadingMore || !hasMore || hasInitiallyLoadedRef.current || !enableScrollLoad) {
-      return;
-    }
+    if (!fetchKey || isLoadingMore || !hasMore || hasInitiallyLoadedRef.current || !enableScrollLoad) return;
 
     hasInitiallyLoadedRef.current = true;
 
-    const safeBatchSize = Number.isFinite(Number(batchSize))
-      ? Math.max(1, Math.floor(Number(batchSize)))
-      : 30;
-
-    if (items.length >= safeBatchSize) {
-      return;
-    }
+    const safeBatchSize = Number.isFinite(Number(batchSize)) ? Math.max(1, Math.floor(Number(batchSize))) : 30;
+    if (items.length >= safeBatchSize) return;
 
     const needed = safeBatchSize - items.length;
     void loadNextPage(needed);
   }, [batchSize, enableScrollLoad, fetchKey, hasMore, isLoadingMore, items.length, loadNextPage]);
 
   useEffect(() => {
-    if (!fetchKey || !enableScrollLoad || typeof window === "undefined") {
-      return undefined;
-    }
+    if (!fetchKey || !enableScrollLoad || typeof window === "undefined") return undefined;
 
     const target = sentinelRef.current;
-
-    if (!target) {
-      return undefined;
-    }
+    if (!target) return undefined;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-
-        if (!entry?.isIntersecting) {
-          return;
-        }
-
-        if (pendingTimerRef.current || isLoadingMore || !hasMore || !isMountedRef.current) {
-          return;
-        }
+        if (!entry?.isIntersecting) return;
+        if (pendingTimerRef.current || isLoadingMore || !hasMore || loadError || !isMountedRef.current) return;
 
         pendingTimerRef.current = setTimeout(() => {
           pendingTimerRef.current = null;
-
-          if (!isMountedRef.current || isLoadingMore || !hasMore) {
-            return;
-          }
-
+          if (!isMountedRef.current || isLoadingMore || !hasMore || loadError) return;
           void loadNextPage();
         }, 220);
       },
-      {
-        root: null,
-        threshold: 0,
-        rootMargin: "0px 0px 420px 0px",
-      },
+      { root: null, threshold: 0, rootMargin: "0px 0px 420px 0px" },
     );
 
     observer.observe(target);
-
     return () => {
       clearPendingTimer();
       observer.disconnect();
     };
-  }, [clearPendingTimer, enableScrollLoad, fetchKey, hasMore, isLoadingMore, loadNextPage]);
+  }, [clearPendingTimer, enableScrollLoad, fetchKey, hasMore, isLoadingMore, loadError, loadNextPage]);
+
+  const showPageLimitNotice =
+    enableScrollLoad && items.length > 0 && (!hasMore || loadError);
 
   return (
     <>
@@ -249,17 +173,14 @@ export default function InfiniteMoviesGrid({
         movies={items}
         mediaType={mediaType}
         imageConfig={imageConfig}
-        showLoadingCard={isLoadingMore && !isMobileViewport}
+        showLoadingCard={false}
       />
 
-      {isMobileViewport && isLoadingMore ? (
-        <div className="row-load-status mt-2 row-load-status-loading" aria-live="polite">
-          <span className="inline-spinner" aria-hidden="true" />
-          Loading more titles...
-        </div>
+      {showPageLimitNotice ? (
+        <p className="row-message mt-3 text-[12px] leading-relaxed muted-label" role="note">
+          {PAGE_LIMIT_NOTICE}
+        </p>
       ) : null}
-
-      {loadError ? <div className="row-message mt-2">Could not load more. Keep scrolling to retry.</div> : null}
 
       {enableScrollLoad ? <div ref={sentinelRef} className="load-sentinel" aria-hidden="true" /> : null}
     </>

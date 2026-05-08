@@ -16,7 +16,7 @@ export default function BackButton({
       return;
     }
 
-    if (window.history.length > 1) {
+    if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
       return;
     }

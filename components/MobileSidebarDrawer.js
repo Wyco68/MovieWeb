@@ -12,9 +12,7 @@ export default function MobileSidebarDrawer({ children }) {
         className="mobile-sidebar-toggle"
         aria-expanded={isOpen}
         aria-controls="mobile-sidebar-panel"
-        onClick={() => {
-          setIsOpen((current) => !current);
-        }}
+        onClick={() => setIsOpen((current) => !current)}
       >
         {isOpen ? "Hide Menu" : "Show Menu"}
       </button>

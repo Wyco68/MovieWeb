@@ -62,22 +62,18 @@ export default async function DiscoverPage({ searchParams }) {
     discovered,
     imageConfig,
   ] = await Promise.all([
-    tmdbFetch("/trending/all/day"),
-    tmdbFetch("/trending/all/week"),
-    tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].popular),
-    tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].topRated),
-    tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].upcoming),
-    tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].nowPlaying),
-    tmdbFetch(`/genre/${mediaType}/list`),
+    tmdbFetch("/trending/all/day", { revalidate: 600 }),
+    tmdbFetch("/trending/all/week", { revalidate: 600 }),
+    tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].popular, { revalidate: 600 }),
+    tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].topRated, { revalidate: 600 }),
+    tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].upcoming, { revalidate: 600 }),
+    tmdbFetch(DISCOVERY_ENDPOINTS[mediaType].nowPlaying, { revalidate: 600 }),
+    tmdbFetch(`/genre/${mediaType}/list`, { revalidate: 86400 }),
     hasFilters
-      ? tmdbFetch(`/discover/${mediaType}`, {
-          params: discoverParams,
-        })
+      ? tmdbFetch(`/discover/${mediaType}`, { params: discoverParams, revalidate: 300 })
       : Promise.resolve(null),
     getTmdbImageConfig(),
   ]);
-
-  const filteredResults = discovered?.results ?? [];
 
   return (
     <>
@@ -101,13 +97,11 @@ export default async function DiscoverPage({ searchParams }) {
           className="filter-select h-10 rounded-[6px] border border-[var(--app-panel-border)] px-3 text-[14px]"
         >
           <option value="">All Genres</option>
-          {(genres?.genres ?? []).map((item) => {
-            return (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            );
-          })}
+          {(genres?.genres ?? []).map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
         </select>
 
         <input
@@ -140,30 +134,27 @@ export default async function DiscoverPage({ searchParams }) {
         </div>
       </form>
 
-      {hasFilters ? (
-        <>
+      {hasFilters && discovered ? (
         <HorizontalMediaRow
-            title="Filtered Results"
-            items={filteredResults}
-            mediaType={mediaType}
-            imageConfig={imageConfig}
-            error={false}
-            fetchKey="discover_filtered"
-            fetchParams={{
-              media: mediaType,
-              with_genres: genre || undefined,
-              with_original_language: language || undefined,
-              "vote_average.gte": parseNumber(minRating),
-              ...(mediaType === "movie"
-                ? { primary_release_year: year || undefined }
-                : { first_air_date_year: year || undefined }),
-              sort_by: "popularity.desc",
-            }}
-            initialPage={discovered?.page ?? 1}
-            initialTotalPages={discovered?.total_pages ?? 1}
-          />
-        </>
+          title="Filtered Results"
+          items={discovered?.results ?? []}
+          mediaType={mediaType}
+          imageConfig={imageConfig}
+          error={false}
+          fetchKey="discover_filtered"
+          fetchParams={{
+            media: mediaType,
+            with_genres: genre || undefined,
+            with_original_language: language || undefined,
+            "vote_average.gte": parseNumber(minRating),
+            year: year || undefined,
+            sort_by: "popularity.desc",
+          }}
+          initialPage={discovered?.page ?? 1}
+          initialTotalPages={discovered?.total_pages ?? 1}
+        />
       ) : null}
+
       <HorizontalMediaRow
         title="Trending Today"
         items={trendingDay?.results ?? []}

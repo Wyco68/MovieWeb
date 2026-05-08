@@ -6,30 +6,23 @@ import { useEffect, useState } from "react";
 const STORAGE_KEY = "nextflix-theme";
 
 function getPreferredTheme() {
-  if (typeof window === "undefined") {
-    return "light";
-  }
+  if (typeof window === "undefined") return "light";
 
   const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (saved === "light" || saved === "dark") {
-    return saved;
-  }
+  if (saved === "light" || saved === "dark") return saved;
 
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function applyTheme(theme) {
-  const root = document.documentElement;
-  root.classList.toggle("dark", theme === "dark");
+  document.documentElement.classList.toggle("dark", theme === "dark");
 }
 
 function persistTheme(theme) {
   try {
     window.localStorage.setItem(STORAGE_KEY, theme);
   } catch {
-    // Ignore storage persistence failures (privacy mode/restricted storage).
+    // ignore
   }
 }
 

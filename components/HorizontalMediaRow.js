@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Movies from "@/components/Movies";
 
 const PREFETCH_THRESHOLD = 800;
-
 const SCROLL_DEBOUNCE_MS = 150;
 const MOBILE_BREAKPOINT_QUERY = "(max-width: 960px)";
+
+const PAGE_LIMIT_NOTICE =
+  "This project requests at most 5 pages per list from the API, so you will not see more than that here.";
 
 export default function HorizontalMediaRow({
   title,
@@ -53,7 +55,7 @@ export default function HorizontalMediaRow({
       if (!fetchKey || isLoadingMore) return;
       if (!Number.isFinite(targetPage) || targetPage < 1) return;
 
-      const safeTargetPage = Math.max(1, Math.min(targetPage, totalPages));
+      const safeTargetPage = Math.max(1, Math.min(targetPage, Math.max(totalPages, 1)));
       if (safeTargetPage === page && !appendItems) return;
 
       abortRef.current?.abort();
@@ -64,7 +66,7 @@ export default function HorizontalMediaRow({
       setLoadError(false);
 
       try {
-        const url = `/api/rows?key=${encodeURIComponent(fetchKey)}&page=${safeTargetPage}${extraQs}`;
+        const url = `/api/tmdb?key=${encodeURIComponent(fetchKey)}&page=${safeTargetPage}${extraQs}`;
         const response = await fetch(url, { signal: controller.signal });
 
         if (!response.ok) throw new Error(`Row request failed: ${response.status}`);
@@ -72,12 +74,11 @@ export default function HorizontalMediaRow({
         const payload = await response.json();
         const nextItems = Array.isArray(payload?.results) ? payload.results : [];
         const nextTotalPages = Number.parseInt(String(payload?.total_pages ?? totalPages), 10);
-        const resolvedPage = Number.parseInt(String(payload?.page ?? safeTargetPage), 10) || safeTargetPage;
+        const resolvedPage =
+          Number.parseInt(String(payload?.page ?? safeTargetPage), 10) || safeTargetPage;
 
         setItems((current) => {
-          if (!appendItems) {
-            return nextItems;
-          }
+          if (!appendItems) return nextItems;
 
           const seen = new Set(
             current.map((item) => `${item?.media_type || mediaType || "movie"}:${item?.id}`),
@@ -96,14 +97,9 @@ export default function HorizontalMediaRow({
         });
 
         setPage(resolvedPage);
-
-        if (Number.isFinite(nextTotalPages) && nextTotalPages > 0) {
-          setTotalPages(nextTotalPages);
-        }
+        if (Number.isFinite(nextTotalPages) && nextTotalPages > 0) setTotalPages(nextTotalPages);
       } catch (err) {
-        if (err?.name !== "AbortError") {
-          setLoadError(true);
-        }
+        if (err?.name !== "AbortError") setLoadError(true);
       } finally {
         setIsLoadingMore(false);
       }
@@ -119,9 +115,7 @@ export default function HorizontalMediaRow({
   const loadMobilePage = useCallback(
     async (targetPage) => {
       await fetchPage(targetPage, { appendItems: false });
-      if (rowRef.current) {
-        rowRef.current.scrollLeft = 0;
-      }
+      if (rowRef.current) rowRef.current.scrollLeft = 0;
     },
     [fetchPage],
   );
@@ -129,14 +123,12 @@ export default function HorizontalMediaRow({
   const handleRowScroll = useCallback(
     (event) => {
       const element = event.currentTarget;
-
-      if (isMobileViewport || !element || isLoadingMore || !hasMore) {
+      if (isMobileViewport || !element || isLoadingMore || !hasMore || loadError) {
         clearPendingTimer();
         return;
       }
 
       const remaining = element.scrollWidth - element.scrollLeft - element.clientWidth;
-
       if (remaining <= PREFETCH_THRESHOLD) {
         if (!pendingTimerRef.current) {
           pendingTimerRef.current = setTimeout(() => {
@@ -148,32 +140,23 @@ export default function HorizontalMediaRow({
         clearPendingTimer();
       }
     },
-    [clearPendingTimer, hasMore, isLoadingMore, isMobileViewport, loadNextPage],
+    [clearPendingTimer, hasMore, isLoadingMore, isMobileViewport, loadError, loadNextPage],
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
+    if (typeof window === "undefined") return undefined;
 
     const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT_QUERY);
-    const updateViewport = () => {
-      setIsMobileViewport(mediaQuery.matches);
-    };
-
+    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
     updateViewport();
 
     if (typeof mediaQuery.addEventListener === "function") {
       mediaQuery.addEventListener("change", updateViewport);
-      return () => {
-        mediaQuery.removeEventListener("change", updateViewport);
-      };
+      return () => mediaQuery.removeEventListener("change", updateViewport);
     }
 
     mediaQuery.addListener(updateViewport);
-    return () => {
-      mediaQuery.removeListener(updateViewport);
-    };
+    return () => mediaQuery.removeListener(updateViewport);
   }, []);
 
   useEffect(() => {
@@ -182,6 +165,9 @@ export default function HorizontalMediaRow({
       abortRef.current?.abort();
     };
   }, [clearPendingTimer]);
+
+  const showPageLimitNotice =
+    Boolean(fetchKey) && items.length > 0 && (!hasMore || loadError);
 
   return (
     <section className="row-section">
@@ -202,16 +188,15 @@ export default function HorizontalMediaRow({
             layout="row"
             containerRef={rowRef}
             onContainerScroll={handleRowScroll}
-            showLoadingCard={isLoadingMore && !isMobileViewport}
+            showLoadingCard={false}
           />
 
-          {loadError ? (
-            <div className="row-message mt-2">
-              {isMobileViewport
-                ? "Could not load. Use Previous/Next to retry."
-                : "Could not load more. Keep scrolling to retry."}
-            </div>
+          {showPageLimitNotice ? (
+            <p className="row-message mt-2 text-[12px] leading-relaxed muted-label" role="note">
+              {PAGE_LIMIT_NOTICE}
+            </p>
           ) : null}
+
           {isMobileViewport ? (
             <div className="mt-2 flex items-center justify-between gap-2 md:hidden">
               <button
@@ -223,14 +208,7 @@ export default function HorizontalMediaRow({
                 Previous
               </button>
               <span className="muted-label inline-flex min-h-5 items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase">
-                {isLoadingMore ? (
-                  <>
-                    <span className="inline-spinner" aria-hidden="true" />
-                    Loading...
-                  </>
-                ) : (
-                  <>Page {page} / {totalPages}</>
-                )}
+                Page {page} / {totalPages}
               </span>
               <button
                 type="button"

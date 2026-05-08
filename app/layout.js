@@ -11,7 +11,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata = {
   title: "NextFlix",
-  description: "Movie Search App using Next.js",
+  description: "Movie and TV Show explorer powered by TMDB",
   metadataBase: new URL(siteUrl),
 };
 

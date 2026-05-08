@@ -3,7 +3,7 @@ import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 export default async function PeoplePage() {
   const [data, imageConfig] = await Promise.all([
-    tmdbFetch("/person/popular"),
+    tmdbFetch("/person/popular", { revalidate: 600 }),
     getTmdbImageConfig(),
   ]);
 
@@ -14,7 +14,7 @@ export default async function PeoplePage() {
         initialItems={data?.results ?? []}
         mediaType="person"
         imageConfig={imageConfig}
-        fetchKey="people_popular"
+        fetchKey="popular_people"
         initialPage={data?.page ?? 1}
         initialTotalPages={data?.total_pages ?? 1}
       />
