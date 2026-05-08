@@ -20,15 +20,10 @@ export default function Header() {
   }, [initialQuery]);
 
   useEffect(() => {
-    if (pathname !== "/search") {
-      return undefined;
-    }
+    if (pathname !== "/search") return undefined;
 
     const trimmed = query.trim();
-
-    if (!trimmed || trimmed === lastPushedRef.current) {
-      return undefined;
-    }
+    if (!trimmed || trimmed === lastPushedRef.current) return undefined;
 
     const timer = setTimeout(() => {
       const params = new URLSearchParams(searchParams?.toString() || "");
@@ -37,9 +32,7 @@ export default function Header() {
       lastPushedRef.current = trimmed;
     }, 450);
 
-    return () => {
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [pathname, query, router, searchParams]);
 
   function handleSubmit(event) {
@@ -51,9 +44,7 @@ export default function Header() {
       return;
     }
 
-    if (trimmed === lastPushedRef.current && pathname === "/search") {
-      return;
-    }
+    if (trimmed === lastPushedRef.current && pathname === "/search") return;
 
     const params = new URLSearchParams({ q: trimmed });
     router.push(`/search?${params.toString()}`);

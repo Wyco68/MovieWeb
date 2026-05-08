@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import BackButton from "@/components/BackButton";
@@ -14,31 +13,29 @@ import {
 } from "@/lib/tmdb";
 
 function formatRuntime(minutes) {
-  if (!minutes || Number.isNaN(Number(minutes))) {
-    return "N/A";
-  }
-
+  if (!minutes || Number.isNaN(Number(minutes))) return "N/A";
   const totalMinutes = Number(minutes);
   const hours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
-
-  if (!hours) {
-    return `${remainingMinutes}m`;
-  }
-
+  if (!hours) return `${remainingMinutes}m`;
   return `${hours}h ${remainingMinutes}m`;
 }
 
-export default async function Movie({ params }) {
+export default async function MovieDetail({ params }) {
   const resolvedParams = await params;
+
+  // ONE request with append_to_response — replaces 6 separate fetches
   const [movie, imageConfig] = await Promise.all([
-    tmdbFetch(`/movie/${resolvedParams.id}`),
+    tmdbFetch(`/movie/${resolvedParams.id}`, {
+      params: {
+        append_to_response: "credits,videos,recommendations,similar,keywords,watch/providers",
+      },
+      revalidate: 600,
+    }),
     getTmdbImageConfig(),
   ]);
 
-  if (!movie?.id) {
-    notFound();
-  }
+  if (!movie?.id) notFound();
 
   const coverUrl = getConfiguredImageUrl(movie.backdrop_path, {
     config: imageConfig,
@@ -53,36 +50,16 @@ export default async function Movie({ params }) {
   const primaryImageUrl = coverUrl || posterUrl;
   const releaseYear = movie.release_date?.split("-")[0] ?? "N/A";
 
-  const [
-    similarResult,
-    recommendationsResult,
-    collectionResult,
-    keywordsResult,
-    videosResult,
-    watchProvidersResult,
-  ] = await Promise.allSettled([
-    tmdbFetch(`/movie/${movie.id}/similar`),
-    tmdbFetch(`/movie/${movie.id}/recommendations`),
-    movie.belongs_to_collection?.id
-      ? tmdbFetch(`/collection/${movie.belongs_to_collection.id}`)
-      : Promise.resolve(null),
-    tmdbFetch(`/movie/${movie.id}/keywords`),
-    tmdbFetch(`/movie/${movie.id}/videos`),
-    tmdbFetch(`/movie/${movie.id}/watch/providers`),
-  ]);
+  // Optional second request only if movie belongs to a collection
+  const collectionResult = movie.belongs_to_collection?.id
+    ? await tmdbFetch(`/collection/${movie.belongs_to_collection.id}`, { revalidate: 600 }).catch(() => null)
+    : null;
 
-  const similar = similarResult.status === "fulfilled" ? similarResult.value : { results: [] };
-  const recommendations =
-    recommendationsResult.status === "fulfilled"
-      ? recommendationsResult.value
-      : { results: [] };
-  const collection = collectionResult.status === "fulfilled" ? collectionResult.value : null;
-  const keywordsData = keywordsResult.status === "fulfilled" ? keywordsResult.value : { keywords: [] };
-  const videosData = videosResult.status === "fulfilled" ? videosResult.value : { results: [] };
-  const watchProviders =
-    watchProvidersResult.status === "fulfilled" ? watchProvidersResult.value : { results: {} };
-
-  const keywords = keywordsData?.keywords ?? [];
+  const videosData = movie.videos ?? { results: [] };
+  const similar = movie.similar ?? { results: [], page: 1, total_pages: 1 };
+  const recommendations = movie.recommendations ?? { results: [], page: 1, total_pages: 1 };
+  const keywords = movie.keywords?.keywords ?? [];
+  const watchProviders = movie["watch/providers"] ?? { results: {} };
 
   return (
     <>
@@ -96,13 +73,11 @@ export default async function Movie({ params }) {
       </h2>
 
       <div className="mb-4 mt-3 flex flex-wrap gap-2">
-        {(movie.genres ?? []).map((genre) => {
-          return (
-            <Badge key={genre.id} variant="outline">
-              {genre.name}
-            </Badge>
-          );
-        })}
+        {(movie.genres ?? []).map((genre) => (
+          <Badge key={genre.id} variant="outline">
+            {genre.name}
+          </Badge>
+        ))}
       </div>
 
       <div className="mt-1">
@@ -134,22 +109,24 @@ export default async function Movie({ params }) {
         {movie.overview}
       </p>
 
-      <section className="mt-6">
-        <div>
-          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] muted-label">Keywords</p>
-          {keywords.length ? (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {keywords.map((keyword) => (
-                <Badge key={keyword.id} variant="outline" className="px-4 py-1.5 text-[15px] font-semibold tracking-[-0.12px]">
-                  {keyword.name}
-                </Badge>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-1 text-[13px] muted-label">No keywords available.</p>
-          )}
-        </div>
-      </section>
+      {keywords.length ? (
+        <section className="mt-6">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.08em] muted-label">
+            Keywords
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {keywords.map((keyword) => (
+              <Badge
+                key={keyword.id}
+                variant="outline"
+                className="px-4 py-1.5 text-[15px] font-semibold tracking-[-0.12px]"
+              >
+                {keyword.name}
+              </Badge>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-8">
         <Persons entityId={movie.id} mediaType="movie" imageConfig={imageConfig} />
@@ -157,10 +134,10 @@ export default async function Movie({ params }) {
 
       <WatchSources providersByRegion={watchProviders?.results ?? {}} />
 
-      {collection?.parts?.length ? (
+      {collectionResult?.parts?.length ? (
         <section className="mt-8">
-          <h3 className="section-title">Collection: {collection.name}</h3>
-          <Movies movies={collection.parts} imageConfig={imageConfig} />
+          <h3 className="section-title">Collection: {collectionResult.name}</h3>
+          <Movies movies={collectionResult.parts} imageConfig={imageConfig} />
         </section>
       ) : null}
 

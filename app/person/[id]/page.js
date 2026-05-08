@@ -15,20 +15,13 @@ function buildFilmography(items) {
     .filter((item) => item?.id && (item?.media_type === "movie" || item?.media_type === "tv"))
     .filter((item) => {
       const key = `${item.media_type}:${item.id}`;
-
-      if (seen.has(key)) {
-        return false;
-      }
-
+      if (seen.has(key)) return false;
       seen.add(key);
       return true;
     })
     .sort((a, b) => {
       const popularityDelta = Number(b?.popularity || 0) - Number(a?.popularity || 0);
-
-      if (popularityDelta !== 0) {
-        return popularityDelta;
-      }
+      if (popularityDelta !== 0) return popularityDelta;
 
       const dateA = a?.release_date || a?.first_air_date || "";
       const dateB = b?.release_date || b?.first_air_date || "";
@@ -38,15 +31,14 @@ function buildFilmography(items) {
 
 export default async function PersonDetail({ params }) {
   const resolvedParams = await params;
+
   const [person, credits, imageConfig] = await Promise.all([
-    tmdbFetch(`/person/${resolvedParams.id}`),
-    tmdbFetch(`/person/${resolvedParams.id}/combined_credits`),
+    tmdbFetch(`/person/${resolvedParams.id}`, { revalidate: 600 }),
+    tmdbFetch(`/person/${resolvedParams.id}/combined_credits`, { revalidate: 600 }),
     getTmdbImageConfig(),
   ]);
 
-  if (!person?.id) {
-    notFound();
-  }
+  if (!person?.id) notFound();
 
   const profileUrl = getConfiguredImageUrl(person.profile_path, {
     config: imageConfig,
@@ -85,16 +77,19 @@ export default async function PersonDetail({ params }) {
         <div>
           <div className="grid gap-2 text-[14px] text-[rgba(0,0,0,0.78)] dark:text-white/80 sm:grid-cols-2">
             <div>
-              <span className="font-medium">Known For:</span> {person.known_for_department || "N/A"}
+              <span className="font-medium">Known For:</span>{" "}
+              {person.known_for_department || "N/A"}
             </div>
             <div>
               <span className="font-medium">Birthday:</span> {person.birthday || "N/A"}
             </div>
             <div>
-              <span className="font-medium">Place of Birth:</span> {person.place_of_birth || "N/A"}
+              <span className="font-medium">Place of Birth:</span>{" "}
+              {person.place_of_birth || "N/A"}
             </div>
             <div>
-              <span className="font-medium">Popularity:</span> {person.popularity?.toFixed?.(1) || "N/A"}
+              <span className="font-medium">Popularity:</span>{" "}
+              {person.popularity?.toFixed?.(1) || "N/A"}
             </div>
           </div>
 

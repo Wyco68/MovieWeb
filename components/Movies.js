@@ -5,30 +5,15 @@ import Link from "next/link";
 import { getConfiguredImageUrl } from "@/lib/tmdb-image";
 
 function resolveMediaType(item, fallbackType) {
-  if (item?.media_type) {
-    return item.media_type;
-  }
-
-  if (fallbackType) {
-    return fallbackType;
-  }
-
-  if (item?.name && !item?.title) {
-    return "tv";
-  }
-
+  if (item?.media_type) return item.media_type;
+  if (fallbackType) return fallbackType;
+  if (item?.name && !item?.title) return "tv";
   return "movie";
 }
 
 function getMediaLink(item, mediaType) {
-  if (mediaType === "tv") {
-    return `/tv/${item.id}`;
-  }
-
-  if (mediaType === "person") {
-    return `/person/${item.id}`;
-  }
-
+  if (mediaType === "tv") return `/tv/${item.id}`;
+  if (mediaType === "person") return `/person/${item.id}`;
   return `/movie/${item.id}`;
 }
 
@@ -51,10 +36,9 @@ export default function Movies({
     layout === "row"
       ? "movie-card row-card p-1.5 text-center flex flex-col"
       : "movie-card p-1 text-center flex flex-col";
+
   const loadingPosterClass =
-    layout === "row"
-      ? "loading-poster-placeholder h-[200px]"
-      : "loading-poster-placeholder h-[140px]";
+    layout === "row" ? "loading-poster-placeholder h-[200px]" : "loading-poster-placeholder h-[140px]";
 
   return (
     <div className={containerClass} ref={containerRef} onScroll={onContainerScroll}>
@@ -68,38 +52,42 @@ export default function Movies({
             : item.release_date?.split("-")[0] || item.first_air_date?.split("-")[0] || "N/A";
 
         return (
-          <div
-            key={`${mediaType}-${item.id}`}
-            className={cardClass}
-          >
+          <div key={`${mediaType}-${item.id}`} className={cardClass}>
             <Link href={getMediaLink(item, mediaType)} className="poster-frame block">
               {imagePath ? (
                 <Image
                   src={getConfiguredImageUrl(imagePath, {
                     config: imageConfig,
                     type: mediaType === "person" ? "profile" : "poster",
-                    variant: layout === "row" ? "sm" : "sm",
+                    variant: "sm",
                   })}
                   alt={`${displayTitle} poster`}
                   width={120}
                   height={180}
                   loading="lazy"
-                  sizes={layout === "row" 
-                    ? "(max-width: 640px) 30vw, (max-width: 1024px) 18vw, 120px"
-                    : "(max-width: 480px) 22vw, (max-width: 640px) 18vw, (max-width: 768px) 15vw, (max-width: 1024px) 14vw, 180px"
+                  sizes={
+                    layout === "row"
+                      ? "(max-width: 640px) 30vw, (max-width: 1024px) 18vw, 120px"
+                      : "(max-width: 480px) 22vw, (max-width: 640px) 18vw, (max-width: 768px) 15vw, (max-width: 1024px) 14vw, 180px"
                   }
                   className="w-full transition-transform duration-300 hover:scale-[1.04]"
                 />
               ) : (
-                <div className={`w-full rounded-lg bg-gradient-to-br from-[#5b45ff]/25 via-[#533afd]/18 to-[#0d253d]/20 dark:from-[#5b45ff]/30 dark:via-[#2f2f75]/40 dark:to-[#0d253d]/55 border border-white/20 dark:border-white/15 flex items-center justify-center ${layout === "row" ? "h-[200px]" : "h-[140px]"}`}>
-                  <span className={`font-medium uppercase tracking-[0.08em] text-white/78 ${layout === "row" ? "text-[10px]" : "text-[9px]"}`}>
+                <div
+                  className={`w-full rounded-lg bg-gradient-to-br from-[#5b45ff]/25 via-[#533afd]/18 to-[#0d253d]/20 dark:from-[#5b45ff]/30 dark:via-[#2f2f75]/40 dark:to-[#0d253d]/55 border border-white/20 dark:border-white/15 flex items-center justify-center ${layout === "row" ? "h-[200px]" : "h-[140px]"}`}
+                >
+                  <span
+                    className={`font-medium uppercase tracking-[0.08em] text-white/78 ${layout === "row" ? "text-[10px]" : "text-[9px]"}`}
+                  >
                     No Photo
                   </span>
                 </div>
               )}
             </Link>
-            <div className={`px-0.5 ${layout === "row" ? "py-1" : "py-1"}`}>
-              <h4 className={`mt-0.5 leading-tight font-semibold tracking-[-0.2px] ${layout === "row" ? "text-[13px]" : "text-[11px]"}`}>
+            <div className="px-0.5 py-1">
+              <h4
+                className={`mt-0.5 leading-tight font-semibold tracking-[-0.2px] ${layout === "row" ? "text-[13px]" : "text-[11px]"}`}
+              >
                 {displayTitle}
               </h4>
               <span className={`muted-label ${layout === "row" ? "text-[11px]" : "text-[10px]"}`}>
@@ -120,8 +108,10 @@ export default function Movies({
           <div className="poster-frame block" aria-hidden="true">
             <div className={loadingPosterClass} />
           </div>
-          <div className={`px-0.5 ${layout === "row" ? "py-1" : "py-1"}`}>
-            <h4 className={`mt-0.5 leading-tight font-semibold tracking-[-0.2px] ${layout === "row" ? "text-[13px]" : "text-[11px]"}`}>
+          <div className="px-0.5 py-1">
+            <h4
+              className={`mt-0.5 leading-tight font-semibold tracking-[-0.2px] ${layout === "row" ? "text-[13px]" : "text-[11px]"}`}
+            >
               <span className="loading-card-label">Loading</span>
               <span className="loading-card-skeleton" aria-hidden="true" />
             </h4>

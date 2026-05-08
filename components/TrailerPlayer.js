@@ -1,49 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
 function sortYoutubeVideos(videos) {
-  const candidates = (videos ?? []).filter((video) => {
-    return video?.site === "YouTube" && video?.key;
-  });
+  const candidates = (videos ?? []).filter((video) => video?.site === "YouTube" && video?.key);
 
-  const typeScoreMap = {
-    Trailer: 4,
-    Teaser: 3,
-    Clip: 2,
-    Featurette: 1,
-  };
+  const typeScoreMap = { Trailer: 4, Teaser: 3, Clip: 2, Featurette: 1 };
 
   const scored = candidates.map((video) => {
     let score = 0;
 
-    if (video.official) {
-      score += 50;
-    }
-
+    if (video.official) score += 50;
     score += (typeScoreMap[video.type] ?? 0) * 10;
-
-    if (video.iso_639_1 === "en") {
-      score += 8;
-    }
-
-    if (!video.iso_639_1) {
-      score += 3;
-    }
-
+    if (video.iso_639_1 === "en") score += 8;
+    if (!video.iso_639_1) score += 3;
     score += Math.min(Number(video.size) || 0, 2160) / 240;
 
     if (typeof video.name === "string") {
       const lower = video.name.toLowerCase();
-
-      if (lower.includes("official")) {
-        score += 10;
-      }
-
-      if (lower.includes("trailer")) {
-        score += 6;
-      }
+      if (lower.includes("official")) score += 10;
+      if (lower.includes("trailer")) score += 6;
     }
 
     const publishedAt = Date.parse(video.published_at || "") || 0;
@@ -81,22 +58,21 @@ export default function TrailerPlayer({
     activeKeyRef.current = activeVideo?.key ?? null;
   }, [activeVideo]);
 
-  const moveToNextCandidate = (key) => {
+  const moveToNextCandidate = useCallback((key) => {
     const failedKeys = failedKeysRef.current;
     failedKeys.add(key);
 
-    const nextIndex = sortedVideos.findIndex(
-      (video) => !failedKeys.has(video.key)
-    );
+    const nextIndex = sortedVideos.findIndex((video) => !failedKeys.has(video.key));
     if (nextIndex === -1) {
       setShowFallback(true);
       return;
     }
 
     setActiveIndex(nextIndex);
-  };
+  }, [sortedVideos]);
+
   useEffect(() => {
-    if (showFallback) return;
+    if (showFallback) return undefined;
 
     const handleMessage = (event) => {
       if (
@@ -107,19 +83,18 @@ export default function TrailerPlayer({
       }
 
       try {
-        const data =
-          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         if (data?.event === "onError" && activeKeyRef.current) {
           moveToNextCandidate(activeKeyRef.current);
         }
       } catch {
+        // ignore
       }
     };
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [showFallback, sortedVideos]);
+  }, [showFallback, moveToNextCandidate]);
 
   if (showFallback || !activeVideo?.key) {
     return (
@@ -141,9 +116,9 @@ export default function TrailerPlayer({
             </span>
           </div>
         )}
-        {unavailableText && (
+        {unavailableText ? (
           <p className="row-message mt-2 text-[13px]">{unavailableText}</p>
-        )}
+        ) : null}
       </>
     );
   }

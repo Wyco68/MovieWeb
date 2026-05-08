@@ -10,48 +10,33 @@ import {
 } from "@/lib/tmdb";
 
 function formatRuntime(minutes) {
-  if (!minutes || Number.isNaN(Number(minutes))) {
-    return "N/A";
-  }
-
+  if (!minutes || Number.isNaN(Number(minutes))) return "N/A";
   const totalMinutes = Number(minutes);
   const hours = Math.floor(totalMinutes / 60);
   const remainingMinutes = totalMinutes % 60;
-
-  if (!hours) {
-    return `${remainingMinutes}m`;
-  }
-
+  if (!hours) return `${remainingMinutes}m`;
   return `${hours}h ${remainingMinutes}m`;
 }
 
 function formatEpisodeCode(seasonNumber, episodeNumber) {
-  const season = String(seasonNumber ?? 0).padStart(2, "0");
-  const episode = String(episodeNumber ?? 0).padStart(2, "0");
-  return `S${season}E${episode}`;
+  return `S${String(seasonNumber ?? 0).padStart(2, "0")}E${String(episodeNumber ?? 0).padStart(2, "0")}`;
 }
 
 export default async function EpisodeDetailPage({ params }) {
   const resolvedParams = await params;
-
-  const tvId = resolvedParams.id;
-  const seasonNumber = resolvedParams.seasonNumber;
-  const episodeNumber = resolvedParams.episodeNumber;
+  const { id: tvId, seasonNumber, episodeNumber } = resolvedParams;
   const currentSeasonNumber = Number(seasonNumber);
   const currentEpisodeNumber = Number(episodeNumber);
 
   const [tv, episode, seasonDetails, episodeVideosResult, imageConfig] = await Promise.all([
-    tmdbFetch(`/tv/${tvId}`),
-    tmdbFetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}`),
-    tmdbFetch(`/tv/${tvId}/season/${seasonNumber}`).catch(() => ({ episodes: [] })),
-    tmdbFetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}/videos`)
-      .catch(() => ({ results: [] })),
+    tmdbFetch(`/tv/${tvId}`, { revalidate: 600 }),
+    tmdbFetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}`, { revalidate: 600 }),
+    tmdbFetch(`/tv/${tvId}/season/${seasonNumber}`, { revalidate: 600 }).catch(() => ({ episodes: [] })),
+    tmdbFetch(`/tv/${tvId}/season/${seasonNumber}/episode/${episodeNumber}/videos`, { revalidate: 600 }).catch(() => ({ results: [] })),
     getTmdbImageConfig(),
   ]);
 
-  if (!tv?.id || !episode?.id) {
-    notFound();
-  }
+  if (!tv?.id || !episode?.id) notFound();
 
   const stillUrl = getConfiguredImageUrl(episode.still_path, {
     config: imageConfig,
@@ -74,6 +59,7 @@ export default async function EpisodeDetailPage({ params }) {
     .map((season) => Number(season?.season_number))
     .filter((num) => Number.isInteger(num) && num > 0)
     .sort((a, b) => a - b);
+
   const seasonIndex = seasonNumbers.indexOf(currentSeasonNumber);
   const previousSeasonNumber = seasonIndex > 0 ? seasonNumbers[seasonIndex - 1] : null;
   const nextSeasonNumber =
@@ -85,79 +71,58 @@ export default async function EpisodeDetailPage({ params }) {
     .filter((ep) => Number.isInteger(Number(ep?.episode_number)))
     .sort((a, b) => Number(a.episode_number) - Number(b.episode_number));
 
-  const currentEpisodeIndex = episodesInSeason.findIndex((ep) => {
-    return Number(ep.episode_number) === currentEpisodeNumber;
-  });
+  const currentEpisodeIndex = episodesInSeason.findIndex(
+    (ep) => Number(ep.episode_number) === currentEpisodeNumber,
+  );
 
   let previousEpisodeTarget =
     currentEpisodeIndex > 0
-      ? {
-          seasonNumber: currentSeasonNumber,
-          episode: episodesInSeason[currentEpisodeIndex - 1],
-        }
+      ? { seasonNumber: currentSeasonNumber, episode: episodesInSeason[currentEpisodeIndex - 1] }
       : null;
   let nextEpisodeTarget =
     currentEpisodeIndex !== -1 && currentEpisodeIndex < episodesInSeason.length - 1
-      ? {
-          seasonNumber: currentSeasonNumber,
-          episode: episodesInSeason[currentEpisodeIndex + 1],
-        }
+      ? { seasonNumber: currentSeasonNumber, episode: episodesInSeason[currentEpisodeIndex + 1] }
       : null;
 
   if (!previousEpisodeTarget || !nextEpisodeTarget) {
     const [previousSeasonDetails, nextSeasonDetails] = await Promise.all([
       !previousEpisodeTarget && previousSeasonNumber
-        ? tmdbFetch(`/tv/${tvId}/season/${previousSeasonNumber}`).catch(() => null)
+        ? tmdbFetch(`/tv/${tvId}/season/${previousSeasonNumber}`, { revalidate: 600 }).catch(() => null)
         : Promise.resolve(null),
       !nextEpisodeTarget && nextSeasonNumber
-        ? tmdbFetch(`/tv/${tvId}/season/${nextSeasonNumber}`).catch(() => null)
+        ? tmdbFetch(`/tv/${tvId}/season/${nextSeasonNumber}`, { revalidate: 600 }).catch(() => null)
         : Promise.resolve(null),
     ]);
 
     if (!previousEpisodeTarget && previousSeasonDetails?.episodes?.length) {
-      const previousSeasonEpisodes = previousSeasonDetails.episodes
+      const prevEps = previousSeasonDetails.episodes
         .filter((ep) => Number.isInteger(Number(ep?.episode_number)))
         .sort((a, b) => Number(a.episode_number) - Number(b.episode_number));
-      const previousEpisode = previousSeasonEpisodes[previousSeasonEpisodes.length - 1];
-
-      if (previousEpisode) {
-        previousEpisodeTarget = {
-          seasonNumber: previousSeasonNumber,
-          episode: previousEpisode,
-        };
-      }
+      const prevEp = prevEps[prevEps.length - 1];
+      if (prevEp) previousEpisodeTarget = { seasonNumber: previousSeasonNumber, episode: prevEp };
     }
 
     if (!nextEpisodeTarget && nextSeasonDetails?.episodes?.length) {
-      const nextSeasonEpisodes = nextSeasonDetails.episodes
+      const nextEps = nextSeasonDetails.episodes
         .filter((ep) => Number.isInteger(Number(ep?.episode_number)))
         .sort((a, b) => Number(a.episode_number) - Number(b.episode_number));
-      const nextEpisode = nextSeasonEpisodes[0];
-
-      if (nextEpisode) {
-        nextEpisodeTarget = {
-          seasonNumber: nextSeasonNumber,
-          episode: nextEpisode,
-        };
-      }
+      const nextEp = nextEps[0];
+      if (nextEp) nextEpisodeTarget = { seasonNumber: nextSeasonNumber, episode: nextEp };
     }
   }
 
   return (
     <>
       <div className="mb-4">
-        <BackButton
-          fallbackHref={`/tv/${tvId}`}
-          label="Back to Series"
-          alwaysRedirectToFallback
-        />
+        <BackButton fallbackHref={`/tv/${tvId}`} label="Back to Series" alwaysRedirectToFallback />
       </div>
 
       <h2 className="text-[clamp(2rem,3vw,3.5rem)] leading-[1.08] font-semibold tracking-[-0.28px]">
         {tv.name}
       </h2>
-      <p className="mt-2 text-[13px] muted-label font-semismedium">
-        {formatEpisodeCode(seasonNumber, episodeNumber)} - {episode.name || "Untitled Episode"}
+      <p className="mt-2 text-[13px] muted-label">
+        {formatEpisodeCode(seasonNumber, episodeNumber)} &mdash;{" "}
+        {episode.name || "Untitled Episode"}
       </p>
 
       <div className="mt-4">
@@ -181,7 +146,8 @@ export default async function EpisodeDetailPage({ params }) {
               {formatEpisodeCode(
                 previousEpisodeTarget.seasonNumber,
                 previousEpisodeTarget.episode.episode_number,
-              )}: {previousEpisodeTarget.episode.name || "Untitled Episode"}
+              )}
+              : {previousEpisodeTarget.episode.name || "Untitled Episode"}
             </p>
           </Link>
         ) : (
@@ -203,7 +169,8 @@ export default async function EpisodeDetailPage({ params }) {
               {formatEpisodeCode(
                 nextEpisodeTarget.seasonNumber,
                 nextEpisodeTarget.episode.episode_number,
-              )}: {nextEpisodeTarget.episode.name || "Untitled Episode"}
+              )}
+              : {nextEpisodeTarget.episode.name || "Untitled Episode"}
             </p>
           </Link>
         ) : (
@@ -224,7 +191,8 @@ export default async function EpisodeDetailPage({ params }) {
           <span className="font-medium">Runtime:</span> {formatRuntime(episode.runtime)}
         </div>
         <div>
-          <span className="font-medium">Rating:</span> {episode.vote_average?.toFixed?.(1) || "N/A"}
+          <span className="font-medium">Rating:</span>{" "}
+          {episode.vote_average?.toFixed?.(1) || "N/A"}
         </div>
         <div>
           <span className="font-medium">Votes:</span> {episode.vote_count ?? "N/A"}
@@ -272,7 +240,6 @@ export default async function EpisodeDetailPage({ params }) {
                       </span>
                     </div>
                   )}
-
                   <div className="p-2">
                     <p className="text-[14px] font-semibold tracking-[-0.18px] text-[rgba(0,0,0,0.88)] dark:text-white/92">
                       {star.name || "Unknown"}

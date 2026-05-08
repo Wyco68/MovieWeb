@@ -13,22 +13,10 @@ function normalizeYear(item) {
 
 function filterSearchResults(results, { mediaType, genre, year, minRating }) {
   return results.filter((item) => {
-    if (mediaType !== "all" && item.media_type !== mediaType) {
-      return false;
-    }
-
-    if (genre && !item?.genre_ids?.includes(Number(genre))) {
-      return false;
-    }
-
-    if (year && normalizeYear(item) !== year) {
-      return false;
-    }
-
-    if (minRating !== undefined && Number(item.vote_average || 0) < minRating) {
-      return false;
-    }
-
+    if (mediaType !== "all" && item.media_type !== mediaType) return false;
+    if (genre && !item?.genre_ids?.includes(Number(genre))) return false;
+    if (year && normalizeYear(item) !== year) return false;
+    if (minRating !== undefined && Number(item.vote_average || 0) < minRating) return false;
     return true;
   });
 }
@@ -36,9 +24,7 @@ function filterSearchResults(results, { mediaType, genre, year, minRating }) {
 export default async function Search({ searchParams }) {
   const resolvedSearchParams = await searchParams;
   const q = String(resolvedSearchParams?.q ?? "").trim();
-  const mediaType = ["all", "movie", "tv", "person"].includes(
-    resolvedSearchParams?.type,
-  )
+  const mediaType = ["all", "movie", "tv", "person"].includes(resolvedSearchParams?.type)
     ? resolvedSearchParams.type
     : "all";
   const genre = String(resolvedSearchParams?.genre ?? "").trim();
@@ -47,29 +33,20 @@ export default async function Search({ searchParams }) {
   const rating = String(resolvedSearchParams?.rating ?? "").trim();
 
   const [search, movieGenres, tvGenres, imageConfig] = await Promise.all([
-    q
+    q && q.length >= 2
       ? tmdbFetch("/search/multi", {
-          params: {
-            query: q,
-            language: language || undefined,
-            include_adult: false,
-          },
+          params: { query: q, language: language || undefined, include_adult: false },
+          revalidate: 300,
         })
       : Promise.resolve({ results: [] }),
-    tmdbFetch("/genre/movie/list"),
-    tmdbFetch("/genre/tv/list"),
+    tmdbFetch("/genre/movie/list", { revalidate: 86400 }),
+    tmdbFetch("/genre/tv/list", { revalidate: 86400 }),
     getTmdbImageConfig(),
   ]);
 
   const genreMap = new Map();
-
-  (movieGenres?.genres ?? []).forEach((item) => {
-    genreMap.set(item.id, item.name);
-  });
-
-  (tvGenres?.genres ?? []).forEach((item) => {
-    genreMap.set(item.id, item.name);
-  });
+  (movieGenres?.genres ?? []).forEach((item) => genreMap.set(item.id, item.name));
+  (tvGenres?.genres ?? []).forEach((item) => genreMap.set(item.id, item.name));
 
   const filteredResults = filterSearchResults(search?.results ?? [], {
     mediaType,
@@ -102,13 +79,11 @@ export default async function Search({ searchParams }) {
           className="filter-select h-10 rounded-[6px] border border-[var(--app-panel-border)] px-3 text-[14px]"
         >
           <option value="">All Genres</option>
-          {Array.from(genreMap.entries()).map(([id, name]) => {
-            return (
-              <option key={id} value={id}>
-                {name}
-              </option>
-            );
-          })}
+          {Array.from(genreMap.entries()).map(([id, name]) => (
+            <option key={id} value={id}>
+              {name}
+            </option>
+          ))}
         </select>
 
         <input
@@ -145,14 +120,7 @@ export default async function Search({ searchParams }) {
         initialItems={filteredResults}
         imageConfig={imageConfig}
         fetchKey="search_multi_filtered"
-        fetchParams={{
-          q,
-          language,
-          type: mediaType,
-          genre,
-          year,
-          rating,
-        }}
+        fetchParams={{ q, language, type: mediaType, genre, year, rating }}
         initialPage={search?.page ?? 1}
         initialTotalPages={search?.total_pages ?? 1}
       />

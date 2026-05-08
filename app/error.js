@@ -9,9 +9,7 @@ export default function Error({ error, reset }) {
     <section className="error-shell" role="alert" aria-live="assertive">
       <p className="error-kicker">Something went wrong</p>
       <h2 className="error-title">We could not load this page.</h2>
-      <p className="error-copy">
-        Try again, or go back to the homepage.
-      </p>
+      <p className="error-copy">Try again, or go back to the homepage.</p>
       <div className="error-actions">
         <button type="button" onClick={reset} className="error-primary-btn">
           Try Again
