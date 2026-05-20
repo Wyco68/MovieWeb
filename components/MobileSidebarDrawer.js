@@ -1,15 +1,52 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const MOBILE_DRAWER_QUERY = "(max-width: 1200px)";
 
 export default function MobileSidebarDrawer({ children }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobileDrawer, setIsMobileDrawer] = useState(false);
+  const triggerRef = useRef(null);
+  const sheetRef = useRef(null);
+
+  const closeDrawer = useCallback(() => {
+    setIsOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  const toggleDrawer = useCallback(() => {
+    setIsOpen((current) => {
+      if (current) triggerRef.current?.focus();
+      return !current;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia(MOBILE_DRAWER_QUERY);
+    const updateViewport = () => setIsMobileDrawer(mediaQuery.matches);
+    updateViewport();
+
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileDrawer || isOpen) return undefined;
+
+    const sheet = sheetRef.current;
+    if (sheet?.contains(document.activeElement)) {
+      triggerRef.current?.focus();
+    }
+  }, [isMobileDrawer, isOpen]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
 
     const onKey = (event) => {
-      if (event.key === "Escape") setIsOpen(false);
+      if (event.key === "Escape") closeDrawer();
     };
 
     document.addEventListener("keydown", onKey);
@@ -20,17 +57,18 @@ export default function MobileSidebarDrawer({ children }) {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [isOpen]);
+  }, [closeDrawer, isOpen]);
 
   return (
     <div className="mobile-sidebar-drawer">
       <button
+        ref={triggerRef}
         type="button"
         className="mobile-sidebar-trigger"
         aria-expanded={isOpen}
         aria-controls="mobile-sidebar-sheet"
         aria-label={isOpen ? "Close menu" : "Open menu"}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={toggleDrawer}
       >
         {isOpen ? (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -46,13 +84,14 @@ export default function MobileSidebarDrawer({ children }) {
       <div
         role="presentation"
         className={`mobile-sidebar-backdrop${isOpen ? " mobile-sidebar-backdrop-visible" : ""}`}
-        onClick={() => setIsOpen(false)}
+        onClick={closeDrawer}
       />
 
       <div
+        ref={sheetRef}
         id="mobile-sidebar-sheet"
         className={`mobile-sidebar-sheet${isOpen ? " mobile-sidebar-sheet-open" : ""}`}
-        aria-hidden={!isOpen}
+        inert={isMobileDrawer && !isOpen}
       >
         {children}
       </div>

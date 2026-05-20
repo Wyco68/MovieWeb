@@ -102,6 +102,7 @@ export default async function Home({ searchParams }) {
         items={popular.items}
         imageConfig={imageConfig}
         error={popular.error}
+        priorityFirstImage
         fetchKey="popular_movies"
         initialPage={popular.currentPage}
         initialTotalPages={popular.totalPages}

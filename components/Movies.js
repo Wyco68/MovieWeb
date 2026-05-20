@@ -25,6 +25,7 @@ export default function Movies({
   containerRef,
   onContainerScroll,
   showLoadingCard = false,
+  priorityFirstImage = false,
 }) {
   const safeMovies = Array.isArray(movies) ? movies : [];
   const containerClass =
@@ -40,11 +41,22 @@ export default function Movies({
   const loadingPosterClass =
     layout === "row" ? "loading-poster-placeholder h-[200px]" : "loading-poster-placeholder h-[140px]";
 
+  const priorityItemKey = priorityFirstImage
+    ? safeMovies.reduce((found, item) => {
+        if (found) return found;
+        const mediaType = resolveMediaType(item, forcedMediaType);
+        const imagePath = mediaType === "person" ? item.profile_path : item.poster_path;
+        return imagePath ? `${mediaType}-${item.id}` : null;
+      }, null)
+    : null;
+
   return (
     <div className={containerClass} ref={containerRef} onScroll={onContainerScroll}>
       {safeMovies.map((item) => {
         const mediaType = resolveMediaType(item, forcedMediaType);
         const imagePath = mediaType === "person" ? item.profile_path : item.poster_path;
+        const itemKey = `${mediaType}-${item.id}`;
+        const isPriorityImage = priorityItemKey === itemKey;
         const displayTitle = item.title || item.name || "Untitled";
         const subtitle =
           mediaType === "person"
@@ -64,7 +76,8 @@ export default function Movies({
                   alt={`${displayTitle} poster`}
                   width={120}
                   height={180}
-                  loading="lazy"
+                  priority={isPriorityImage}
+                  loading={isPriorityImage ? undefined : "lazy"}
                   sizes={
                     layout === "row"
                       ? "(max-width: 640px) 30vw, (max-width: 1024px) 18vw, 120px"

@@ -119,6 +119,7 @@ export default async function Search({ searchParams }) {
       <InfiniteMoviesGrid
         initialItems={filteredResults}
         imageConfig={imageConfig}
+        priorityFirstImage
         fetchKey="search_multi_filtered"
         fetchParams={{ q, language, type: mediaType, genre, year, rating }}
         initialPage={search?.page ?? 1}
