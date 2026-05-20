@@ -120,6 +120,7 @@ export default async function Search({ searchParams }) {
         initialItems={filteredResults}
         imageConfig={imageConfig}
         priorityFirstImage
+        priorityImageCount={6}
         fetchKey="search_multi_filtered"
         fetchParams={{ q, language, type: mediaType, genre, year, rating }}
         initialPage={search?.page ?? 1}

@@ -15,6 +15,7 @@ export default async function PeoplePage() {
         mediaType="person"
         imageConfig={imageConfig}
         priorityFirstImage
+        priorityImageCount={6}
         fetchKey="popular_people"
         initialPage={data?.page ?? 1}
         initialTotalPages={data?.total_pages ?? 1}
