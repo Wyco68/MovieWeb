@@ -23,6 +23,7 @@ export default async function GenrePage({ params }) {
         initialItems={byGenres?.results ?? []}
         imageConfig={imageConfig}
         priorityFirstImage
+        priorityImageCount={6}
         fetchKey="genre_movies"
         fetchParams={{ genreId: resolvedParams.id }}
         initialPage={byGenres?.page ?? 1}
