@@ -141,6 +141,7 @@ export default async function DiscoverPage({ searchParams }) {
           mediaType={mediaType}
           imageConfig={imageConfig}
           error={false}
+          priorityFirstImage
           fetchKey="discover_filtered"
           fetchParams={{
             media: mediaType,
@@ -160,6 +161,7 @@ export default async function DiscoverPage({ searchParams }) {
         items={trendingDay?.results ?? []}
         imageConfig={imageConfig}
         error={false}
+        priorityFirstImage={!hasFilters}
         fetchKey="discover_trending_day"
         initialPage={trendingDay?.page ?? 1}
         initialTotalPages={trendingDay?.total_pages ?? 1}

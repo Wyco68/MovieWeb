@@ -22,6 +22,7 @@ export default async function GenrePage({ params }) {
       <InfiniteMoviesGrid
         initialItems={byGenres?.results ?? []}
         imageConfig={imageConfig}
+        priorityFirstImage
         fetchKey="genre_movies"
         fetchParams={{ genreId: resolvedParams.id }}
         initialPage={byGenres?.page ?? 1}

@@ -25,6 +25,7 @@ export default function HorizontalMediaRow({
   fetchParams,
   initialPage = 1,
   initialTotalPages = 1,
+  priorityFirstImage = false,
 }) {
   const safeItems = Array.isArray(initialItems) ? initialItems : [];
   const [items, setItems] = useState(safeItems);
@@ -187,6 +188,7 @@ export default function HorizontalMediaRow({
             containerRef={rowRef}
             onContainerScroll={handleRowScroll}
             showLoadingCard={false}
+            priorityFirstImage={priorityFirstImage}
           />
 
           {showPageLimitNotice ? (

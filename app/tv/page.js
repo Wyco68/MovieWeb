@@ -22,6 +22,7 @@ export default async function TVShowsPage() {
         mediaType="tv"
         imageConfig={imageConfig}
         error={false}
+        priorityFirstImage
         fetchKey="popular_tv"
         initialPage={popular?.page ?? 1}
         initialTotalPages={popular?.total_pages ?? 1}

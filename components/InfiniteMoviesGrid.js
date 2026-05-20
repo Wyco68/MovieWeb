@@ -20,6 +20,7 @@ export default function InfiniteMoviesGrid({
   initialTotalPages = 1,
   batchSize = 30,
   enableScrollLoad = true,
+  priorityFirstImage = false,
 }) {
   const [items, setItems] = useState(Array.isArray(initialItems) ? initialItems : []);
   const [totalPages, setTotalPages] = useState(Math.max(1, initialTotalPages));
@@ -174,6 +175,7 @@ export default function InfiniteMoviesGrid({
         mediaType={mediaType}
         imageConfig={imageConfig}
         showLoadingCard={false}
+        priorityFirstImage={priorityFirstImage}
       />
 
       {showPageLimitNotice ? (
