@@ -15,9 +15,7 @@ export const metadata = {
   description: "Movie and TV Show explorer powered by TMDB",
   metadataBase: new URL(siteUrl),
   icons: {
-    icon: "/icon.jpg",
-    shortcut: "/icon.jpg",
-    apple: "/icon.jpg",
+    icon: "/icon.svg",
   },
 };
 
