@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Menu, X } from "lucide-react";
 
 const MOBILE_DRAWER_QUERY = "(max-width: 1200px)";
 
@@ -64,21 +65,13 @@ export default function MobileSidebarDrawer({ children }) {
       <button
         ref={triggerRef}
         type="button"
-        className="mobile-sidebar-trigger"
+        className="mobile-sidebar-trigger bg-white dark:bg-[#1c1e54] text-[#061b31] dark:text-white border-[#e5edf5] dark:border-white/10 hover:border-[#533afd] transition-all"
         aria-expanded={isOpen}
         aria-controls="mobile-sidebar-sheet"
         aria-label={isOpen ? "Close menu" : "Open menu"}
         onClick={toggleDrawer}
       >
-        {isOpen ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-          </svg>
-        ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
-          </svg>
-        )}
+        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
       <div

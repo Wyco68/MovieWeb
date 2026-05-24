@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
-import Movies from "@/components/Movies";
+import HorizontalMediaRow from "@/components/HorizontalMediaRow";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -100,12 +100,16 @@ export default async function PersonDetail({ params }) {
         </div>
       </div>
 
-      {filmography.length ? (
-        <section className="mt-8">
-          <h3 className="section-title">Known For Filmography</h3>
-          <Movies movies={filmography} imageConfig={imageConfig} />
-        </section>
-      ) : null}
+      {filmography.length > 0 && (
+        <div className="mt-8">
+          <HorizontalMediaRow
+            title="Known For Filmography"
+            items={filmography}
+            imageConfig={imageConfig}
+            emptyLabel="No filmography available."
+          />
+        </div>
+      )}
     </>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Movies from "@/components/Movies";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const PREFETCH_THRESHOLD = 800;
 const SCROLL_DEBOUNCE_MS = 150;
@@ -170,8 +172,8 @@ export default function HorizontalMediaRow({
 
   return (
     <section className="row-section">
-      <div className="row-title-wrap">
-        <h3 className="section-title mb-0 border-b-0 pb-0">{title}</h3>
+      <div className="row-title-wrap mb-4 flex items-center justify-between">
+        <h3 className="text-xl font-medium tracking-tight text-[#061b31] dark:text-white border-none pb-0 mb-0">{title}</h3>
       </div>
 
       {error ? (
@@ -198,26 +200,29 @@ export default function HorizontalMediaRow({
           ) : null}
 
           {isMobileViewport ? (
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <button
+            <div className="mt-4 flex items-center justify-between gap-2">
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => void loadMobilePage(page - 1)}
                 disabled={!hasPrevious || isLoadingMore}
-                className="h-9 rounded-[6px] border border-[var(--app-panel-border)] px-3 text-[12px] font-medium disabled:cursor-not-allowed disabled:opacity-45"
+                className="h-9 px-3 border-[#e5edf5] dark:border-white/10 bg-white dark:bg-[#1c1e54]"
               >
+                <ChevronLeft className="w-4 h-4 mr-1" />
                 Previous
-              </button>
-              <span className="muted-label inline-flex min-h-5 items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase">
+              </Button>
+              <span className="muted-label inline-flex min-h-5 items-center gap-1.5 text-[11px] tracking-[0.08em] uppercase font-medium">
                 Page {page} / {totalPages}
               </span>
-              <button
+              <Button
                 type="button"
                 onClick={() => void loadMobilePage(page + 1)}
                 disabled={!hasMore || isLoadingMore}
-                className="h-9 rounded-[6px] bg-[#533afd] px-3 text-[12px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-45"
+                className="h-9 px-3 bg-[#533afd] text-white hover:bg-[#4434d4] border-0"
               >
                 Next
-              </button>
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
           ) : null}
         </div>

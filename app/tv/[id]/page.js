@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import BackButton from "@/components/BackButton";
-import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
+import HorizontalMediaRow from "@/components/HorizontalMediaRow";
 import Persons from "@/components/Persons";
 import SeasonEpisodesSwitcher from "@/components/SeasonEpisodesSwitcher";
 import TrailerPlayer from "@/components/TrailerPlayer";
@@ -157,33 +157,29 @@ export default async function TVShowDetail({ params }) {
 
       <SeasonEpisodesSwitcher tvId={tv.id} seasons={seasonsForSwitcher} />
 
-      <section className="mt-8">
-        <h3 className="section-title">Similar Shows</h3>
-        <InfiniteMoviesGrid
-          initialItems={similar?.results ?? []}
-          mediaType="tv"
-          imageConfig={imageConfig}
-          fetchKey="tv_similar"
-          fetchParams={{ tvId: tv.id }}
-          initialPage={similar?.page ?? 1}
-          initialTotalPages={similar?.total_pages ?? 1}
-          enableScrollLoad={false}
-        />
-      </section>
+      {similar?.results?.length > 0 && (
+        <div className="mt-8">
+          <HorizontalMediaRow
+            title="Similar Shows"
+            items={similar?.results ?? []}
+            mediaType="tv"
+            imageConfig={imageConfig}
+            emptyLabel="No similar shows found."
+          />
+        </div>
+      )}
 
-      <section className="mt-8">
-        <h3 className="section-title">Recommendations</h3>
-        <InfiniteMoviesGrid
-          initialItems={recommendations?.results ?? []}
-          mediaType="tv"
-          imageConfig={imageConfig}
-          fetchKey="tv_recommendations"
-          fetchParams={{ tvId: tv.id }}
-          initialPage={recommendations?.page ?? 1}
-          initialTotalPages={recommendations?.total_pages ?? 1}
-          enableScrollLoad={false}
-        />
-      </section>
+      {recommendations?.results?.length > 0 && (
+        <div className="mt-8">
+          <HorizontalMediaRow
+            title="Recommendations"
+            items={recommendations?.results ?? []}
+            mediaType="tv"
+            imageConfig={imageConfig}
+            emptyLabel="No recommendations found."
+          />
+        </div>
+      )}
     </>
   );
 }

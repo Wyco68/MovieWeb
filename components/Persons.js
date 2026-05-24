@@ -4,54 +4,59 @@ import { getConfiguredImageUrl, tmdbFetch } from "@/lib/tmdb";
 
 export default async function Persons({ entityId, mediaType = "movie", imageConfig }) {
   const data = await tmdbFetch(`/${mediaType}/${entityId}/credits`, { revalidate: 600 });
-  const casts = (data?.cast ?? []).slice(0, 12);
+  const casts = (data?.cast ?? []).slice(0, 15);
 
   if (!casts.length) return null;
 
   return (
     <div>
-      <h4 className="text-[22px] font-bold tracking-[-0.3px] text-[rgba(0,0,0,0.9)] dark:text-white">
-        Cast
-      </h4>
-      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:gap-4">
-        {casts.map((person) => (
-          <div
-            key={`cast-${person.id}`}
-            className="movie-card text-center flex flex-col justify-between p-1.5 sm:p-2"
-          >
-            <Link href={`/person/${person.id}`} className="block no-underline">
-              {person.profile_path ? (
-                <Image
-                  src={getConfiguredImageUrl(person.profile_path, {
-                    config: imageConfig,
-                    type: "profile",
-                    variant: "sm",
-                  })}
-                  alt={person.name || "Person"}
-                  width={185}
-                  height={278}
-                  loading="lazy"
-                  sizes="(max-width: 640px) 42vw, (max-width: 1024px) 26vw, 160px"
-                  className="w-full h-auto rounded-[6px]"
-                />
-              ) : (
-                <div className="w-full h-[220px] sm:h-[278px] rounded-[6px] bg-gradient-to-br from-[#5b45ff]/25 via-[#533afd]/18 to-[#0d253d]/20 dark:from-[#5b45ff]/30 dark:via-[#2f2f75]/40 dark:to-[#0d253d]/55 border border-white/20 dark:border-white/15 flex flex-col items-center justify-center gap-2">
-                  <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-white/78">
-                    No Photo
-                  </span>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-medium tracking-tight text-[#061b31] dark:text-white">
+          Top Cast
+        </h3>
+      </div>
+      <div className="relative">
+        <div className="flex gap-4 overflow-x-auto pb-4 pt-1 px-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10 snap-x">
+          {casts.map((person) => (
+            <div
+              key={`cast-${person.id}`}
+              className="flex-none w-[140px] snap-start movie-card p-1.5 flex flex-col bg-white dark:bg-[#1c1e54] border border-[#e5edf5] dark:border-white/10 rounded-lg transition-transform hover:-translate-y-1 hover:shadow-md"
+            >
+              <Link href={`/person/${person.id}`} className="block no-underline h-full flex flex-col">
+                <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[6px] bg-slate-100 dark:bg-slate-800">
+                  {person.profile_path ? (
+                    <Image
+                      src={getConfiguredImageUrl(person.profile_path, {
+                        config: imageConfig,
+                        type: "profile",
+                        variant: "sm",
+                      })}
+                      alt={person.name || "Person"}
+                      fill
+                      loading="lazy"
+                      sizes="140px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
+                        No Photo
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="p-1.5 sm:p-2">
-                <div className="text-[13px] sm:text-[14px] leading-tight font-medium tracking-[-0.18px]">
-                  {person.name || "Unknown"}
+                <div className="px-1 py-2 flex flex-col flex-1 justify-center">
+                  <div className="text-[13px] font-semibold tracking-tight text-[#061b31] dark:text-white leading-tight line-clamp-1">
+                    {person.name || "Unknown"}
+                  </div>
+                  <div className="text-[11px] text-[#64748d] dark:text-[#a1b0c0] mt-0.5 line-clamp-2 leading-tight">
+                    {person.character || "-"}
+                  </div>
                 </div>
-                <span className="text-[11px] sm:text-[12px] muted-label">
-                  {person.character || "-"}
-                </span>
-              </div>
-            </Link>
-          </div>
-        ))}
+              </Link>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
