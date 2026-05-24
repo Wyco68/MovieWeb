@@ -1,6 +1,5 @@
-import Image from "next/image";
-import Link from "next/link";
 import HorizontalMediaRow from "@/components/HorizontalMediaRow";
+import HeroSection from "@/components/HeroSection";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -59,85 +58,56 @@ export default async function Home({ searchParams }) {
   const featuredYear = featured?.release_date?.split("-")[0] ?? "N/A";
 
   return (
-    <div>
-      {featured && featuredBackdrop ? (
-        <section className="hero-panel">
-          <Image
-            src={featuredBackdrop}
-            alt={`${featured.title} backdrop`}
-            fill
-            priority
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 960px"
-          />
-          <div className="hero-overlay" />
-          <div className="hero-content">
-            <p className="hero-kicker">Featured Tonight</p>
-            <h2 className="hero-title">{featured.title}</h2>
-            <p className="hero-meta">
-              {featuredYear} &bull; Rating {featured.vote_average?.toFixed?.(1) || "-"}
-            </p>
-            <p className="hero-copy">
-              {featured.overview ||
-                "Explore one of the most talked-about titles right now and dive into a complete cast and detail view."}
-            </p>
-            <div className="mt-5 flex gap-2">
-              <Link href={`/movie/${featured.id}`}>
-                <span className="inline-flex items-center rounded-[4px] bg-[#533afd] px-4 py-2 text-[14px] text-white">
-                  View Details
-                </span>
-              </Link>
-              <Link href="/search">
-                <span className="hero-cta-soft inline-flex items-center rounded-[4px] border px-4 py-2 text-[14px] backdrop-blur-sm">
-                  Explore More
-                </span>
-              </Link>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      <HorizontalMediaRow
-        title="Popular Movies"
-        items={popular.items}
-        imageConfig={imageConfig}
-        error={popular.error}
-        priorityFirstImage
-        fetchKey="popular_movies"
-        initialPage={popular.currentPage}
-        initialTotalPages={popular.totalPages}
+    <div className="flex flex-col gap-8 pb-12">
+      <HeroSection
+        featured={featured}
+        featuredBackdrop={featuredBackdrop}
+        featuredYear={featuredYear}
       />
 
-      <HorizontalMediaRow
-        title="Trending This Week"
-        items={trending.items}
-        imageConfig={imageConfig}
-        error={trending.error}
-        fetchKey="trending_movies_week"
-        initialPage={trending.currentPage}
-        initialTotalPages={trending.totalPages}
-      />
+      <div className="flex flex-col gap-10">
+        <HorizontalMediaRow
+          title="Popular Movies"
+          items={popular.items}
+          imageConfig={imageConfig}
+          error={popular.error}
+          priorityFirstImage
+          fetchKey="popular_movies"
+          initialPage={popular.currentPage}
+          initialTotalPages={popular.totalPages}
+        />
 
-      <HorizontalMediaRow
-        title="Popular TV Shows"
-        items={tvPopular.items}
-        mediaType="tv"
-        imageConfig={imageConfig}
-        error={tvPopular.error}
-        fetchKey="popular_tv"
-        initialPage={tvPopular.currentPage}
-        initialTotalPages={tvPopular.totalPages}
-      />
+        <HorizontalMediaRow
+          title="Trending This Week"
+          items={trending.items}
+          imageConfig={imageConfig}
+          error={trending.error}
+          fetchKey="trending_movies_week"
+          initialPage={trending.currentPage}
+          initialTotalPages={trending.totalPages}
+        />
 
-      <HorizontalMediaRow
-        title="Top Rated Movies"
-        items={topRated.items}
-        imageConfig={imageConfig}
-        error={topRated.error}
-        fetchKey="top_rated_movies"
-        initialPage={topRated.currentPage}
-        initialTotalPages={topRated.totalPages}
-      />
+        <HorizontalMediaRow
+          title="Popular TV Shows"
+          items={tvPopular.items}
+          mediaType="tv"
+          imageConfig={imageConfig}
+          error={tvPopular.error}
+          fetchKey="popular_tv"
+          initialPage={tvPopular.currentPage}
+          initialTotalPages={tvPopular.totalPages}
+        />
+
+        <HorizontalMediaRow
+          title="Top Rated Movies"
+          items={topRated.items}
+          imageConfig={imageConfig}
+          error={topRated.error}
+          fetchKey="top_rated_movies"
+          initialPage={topRated.currentPage}
+          initialTotalPages={topRated.totalPages}
+        />
+      </div>
     </div>
   );
 }

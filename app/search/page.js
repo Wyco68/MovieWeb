@@ -1,4 +1,5 @@
 import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
+import FilterPanel from "@/components/FilterPanel";
 import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 function parseNumber(value) {
@@ -56,76 +57,49 @@ export default async function Search({ searchParams }) {
   });
 
   return (
-    <>
-      <h3 className="section-title">Search: {q || "-"}</h3>
+    <div className="pb-12">
+      <div className="mb-6 border-b border-[var(--app-panel-border)] pb-4">
+        <h2 className="text-3xl font-light tracking-tight text-[#061b31] dark:text-white">
+          {q ? `Search Results for "${q}"` : "Explore"}
+        </h2>
+        {q && (
+          <p className="mt-2 text-sm text-[#64748d] dark:text-white/60">
+            Found {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
 
-      <form className="mb-4 mt-3 grid grid-cols-1 gap-3 rounded-[8px] border border-[var(--app-panel-border)] p-4 sm:grid-cols-2 lg:grid-cols-5">
-        <input type="hidden" name="q" defaultValue={q} />
-
-        <select
-          name="type"
-          defaultValue={mediaType}
-          className="filter-select h-10 rounded-[6px] border border-[var(--app-panel-border)] px-3 text-[14px]"
-        >
-          <option value="all">All Types</option>
-          <option value="movie">Movies</option>
-          <option value="tv">TV Shows</option>
-          <option value="person">People</option>
-        </select>
-
-        <select
-          name="genre"
-          defaultValue={genre}
-          className="filter-select h-10 rounded-[6px] border border-[var(--app-panel-border)] px-3 text-[14px]"
-        >
-          <option value="">All Genres</option>
-          {Array.from(genreMap.entries()).map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
-
-        <input
-          name="year"
-          defaultValue={year}
-          placeholder="Year"
-          className="h-10 rounded-[6px] border border-[var(--app-panel-border)] bg-transparent px-3 text-[14px]"
-        />
-
-        <input
-          name="language"
-          defaultValue={language}
-          placeholder="Language (en)"
-          className="h-10 rounded-[6px] border border-[var(--app-panel-border)] bg-transparent px-3 text-[14px]"
-        />
-
-        <div className="flex gap-2 sm:col-span-2 lg:col-span-1">
-          <input
-            name="rating"
-            defaultValue={rating}
-            placeholder="Min Rating"
-            className="h-10 flex-1 rounded-[6px] border border-[var(--app-panel-border)] bg-transparent px-3 text-[14px]"
-          />
-          <button
-            type="submit"
-            className="h-10 rounded-[6px] bg-[#533afd] px-4 text-[14px] font-medium text-white sm:px-5"
-          >
-            Apply
-          </button>
-        </div>
-      </form>
-
-      <InfiniteMoviesGrid
-        initialItems={filteredResults}
-        imageConfig={imageConfig}
-        priorityFirstImage
-        priorityImageCount={6}
-        fetchKey="search_multi_filtered"
-        fetchParams={{ q, language, type: mediaType, genre, year, rating }}
-        initialPage={search?.page ?? 1}
-        initialTotalPages={search?.total_pages ?? 1}
+      <FilterPanel
+        q={q}
+        mediaType={mediaType}
+        genre={genre}
+        year={year}
+        language={language}
+        rating={rating}
+        genreMap={genreMap}
       />
-    </>
+
+      <div className="mt-8">
+        {filteredResults.length > 0 ? (
+          <InfiniteMoviesGrid
+            initialItems={filteredResults}
+            imageConfig={imageConfig}
+            priorityFirstImage
+            priorityImageCount={6}
+            fetchKey="search_multi_filtered"
+            fetchParams={{ q, language, type: mediaType, genre, year, rating }}
+            initialPage={search?.page ?? 1}
+            initialTotalPages={search?.total_pages ?? 1}
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white dark:bg-[#1c1e54] rounded-lg border border-[var(--app-panel-border)] border-dashed">
+            <h3 className="text-xl font-medium text-[#061b31] dark:text-white mb-2">No results found</h3>
+            <p className="text-[#64748d] dark:text-white/60 max-w-md">
+              We couldn't find any matches for your search. Try adjusting your filters or search query.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
