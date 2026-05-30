@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getClientIp, isIpBanned } from "@/lib/rate-limit";
+import { getClientIp, isIpBanned } from "./lib/edge-guard.js";
 
 export const config = {
   matcher: "/api/:path*",
