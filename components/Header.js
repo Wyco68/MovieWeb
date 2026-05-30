@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { SEARCH_QUERY_MAX, SEARCH_QUERY_MIN } from "@/lib/search-params";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
@@ -24,26 +25,28 @@ export default function Header() {
     if (pathname !== "/search") return undefined;
 
     const trimmed = query.trim();
-    if (!trimmed || trimmed === lastPushedRef.current) return undefined;
+    if (!trimmed || trimmed.length < SEARCH_QUERY_MIN || trimmed === lastPushedRef.current) return undefined;
 
     const timer = setTimeout(() => {
       const params = new URLSearchParams(searchParams?.toString() || "");
-      params.set("q", trimmed);
+      params.set("q", trimmed.slice(0, SEARCH_QUERY_MAX));
       router.replace(`/search?${params.toString()}`);
-      lastPushedRef.current = trimmed;
-    }, 450);
+      lastPushedRef.current = trimmed.slice(0, SEARCH_QUERY_MAX);
+    }, 600);
 
     return () => clearTimeout(timer);
   }, [pathname, query, router, searchParams]);
 
   function handleSubmit(event) {
     event.preventDefault();
-    const trimmed = query.trim();
+    const trimmed = query.trim().slice(0, SEARCH_QUERY_MAX);
 
     if (!trimmed) {
       router.push("/");
       return;
     }
+
+    if (trimmed.length < SEARCH_QUERY_MIN) return;
 
     if (trimmed === lastPushedRef.current && pathname === "/search") return;
 
@@ -75,6 +78,7 @@ export default function Header() {
             type="text"
             name="q"
             value={query}
+            maxLength={SEARCH_QUERY_MAX}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search movies, shows, or people..."
             className="w-full bg-white/50 pl-9 dark:bg-black/20 border-[#e5edf5] dark:border-white/10 focus-visible:ring-[#533afd] rounded-md transition-shadow"

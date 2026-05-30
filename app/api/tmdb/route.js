@@ -1,5 +1,17 @@
 export const runtime = "edge";
 
+import { applyRateLimit } from "@/lib/rate-limit";
+import {
+  isValidId,
+  isValidLanguage,
+  isValidMediaType,
+  isValidYear,
+  parseRatingNumber,
+  sanitizeSearchPageParams,
+  SEARCH_QUERY_MAX,
+  SEARCH_QUERY_MIN,
+} from "@/lib/search-params";
+
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const REVALIDATE = 600;
 
@@ -46,10 +58,10 @@ const FILTER_PARAM_KEYS = [
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function jsonError(message, status) {
+function jsonError(message, status, extraHeaders = {}) {
   return new Response(JSON.stringify({ error: message }), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...extraHeaders },
   });
 }
 
@@ -65,22 +77,6 @@ function clampPage(raw) {
   if (!Number.isFinite(parsed) || parsed < 1) return 1;
   if (parsed > 5) return 5;
   return parsed;
-}
-
-function isValidId(value) {
-  return /^\d{1,8}$/.test(String(value || "").trim());
-}
-
-function isValidLanguage(value) {
-  const lang = String(value || "").trim();
-  if (!lang) return true;
-  return /^[a-z]{2}(-[A-Z]{2})?$/.test(lang);
-}
-
-function isValidYear(value) {
-  const y = String(value || "").trim();
-  if (!y) return true;
-  return /^(19|20)\d{2}$/.test(y);
 }
 
 async function fetchTmdb(url, token) {
@@ -109,6 +105,19 @@ export async function GET(request) {
   const page = clampPage(searchParams.get("page"));
 
   if (!key) return jsonError("Missing key.", 400);
+
+  const isSearch = key === "search_multi_filtered";
+  const rateLimit = applyRateLimit(request, {
+    bucketName: isSearch ? "tmdb-search" : "tmdb-api",
+    maxRequests: isSearch ? 30 : 120,
+    windowMs: 60_000,
+  });
+
+  if (!rateLimit.ok) {
+    return jsonError("Too many requests.", 429, {
+      "Retry-After": String(rateLimit.retryAfterSeconds),
+    });
+  }
 
   try {
     // ── static list endpoints ──────────────────────────────────────────────
@@ -200,14 +209,36 @@ export async function GET(request) {
 
     // ── search multi ───────────────────────────────────────────────────────
     if (key === "search_multi_filtered") {
-      const query = String(searchParams.get("q") || "").trim();
-      if (!query || query.length < 2 || query.length > 50) return jsonError("Invalid query.", 400);
+      const rawQuery = String(searchParams.get("q") || "").trim();
+      if (!rawQuery || rawQuery.length < SEARCH_QUERY_MIN || rawQuery.length > SEARCH_QUERY_MAX) {
+        return jsonError("Invalid query.", 400);
+      }
 
-      const language = String(searchParams.get("language") || "").trim();
-      if (language && !isValidLanguage(language)) return jsonError("Invalid language.", 400);
+      const rawLanguage = String(searchParams.get("language") || "").trim();
+      if (rawLanguage && !isValidLanguage(rawLanguage)) return jsonError("Invalid language.", 400);
 
-      const type = searchParams.get("type") || "all";
-      if (!["all", "movie", "tv", "person"].includes(type)) return jsonError("Invalid type.", 400);
+      const rawType = searchParams.get("type") || "all";
+      if (!isValidMediaType(rawType)) return jsonError("Invalid type.", 400);
+
+      const rawYear = String(searchParams.get("year") || "").trim();
+      if (rawYear && !isValidYear(rawYear)) return jsonError("Invalid year.", 400);
+
+      const rawGenre = String(searchParams.get("genre") || "").trim();
+      if (rawGenre && !isValidId(rawGenre)) return jsonError("Invalid genre.", 400);
+
+      const rawRating = String(searchParams.get("rating") || "").trim();
+      if (rawRating && parseRatingNumber(rawRating) === undefined) {
+        return jsonError("Invalid rating.", 400);
+      }
+
+      const { q: query, mediaType: type, genre, year, language, rating } = sanitizeSearchPageParams({
+        q: rawQuery,
+        type: rawType,
+        genre: rawGenre,
+        year: rawYear,
+        language: rawLanguage,
+        rating: rawRating,
+      });
 
       const params = new URLSearchParams({
         query,
@@ -223,15 +254,11 @@ export async function GET(request) {
 
       if (type !== "all") results = results.filter((item) => item?.media_type === type);
 
-      const genre = searchParams.get("genre") || "";
       if (genre) {
         const genreNum = Number.parseInt(genre, 10);
-        if (Number.isFinite(genreNum)) {
-          results = results.filter((item) => (item?.genre_ids ?? []).includes(genreNum));
-        }
+        results = results.filter((item) => (item?.genre_ids ?? []).includes(genreNum));
       }
 
-      const year = searchParams.get("year") || "";
       if (year) {
         results = results.filter((item) => {
           const date = item?.release_date || item?.first_air_date || "";
@@ -239,12 +266,9 @@ export async function GET(request) {
         });
       }
 
-      const rating = searchParams.get("rating") || "";
-      if (rating) {
-        const minRating = Number(rating);
-        if (Number.isFinite(minRating)) {
-          results = results.filter((item) => Number(item?.vote_average || 0) >= minRating);
-        }
+      const minRating = parseRatingNumber(rating);
+      if (minRating !== undefined) {
+        results = results.filter((item) => Number(item?.vote_average || 0) >= minRating);
       }
 
       return new Response(
