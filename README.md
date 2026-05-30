@@ -1,12 +1,12 @@
 # next-movies
 
-A modern, production-grade web application for discovering movies, TV shows, and actors. Built with Next.js App Router and powered by The Movie Database (TMDb) API.
+A modern, production-grade web application for discovering movies, TV shows, and actors. Built with Next.js App Router, powered by The Movie Database (TMDb) API, and protected with Upstash Redis rate limiting on Vercel Edge.
 
 ## Core Features
 - Browse popular, trending, and top-rated movies and TV shows
 - View detailed information for movies, TV series, and cast members
-- Search functionality for movies, shows, and people
-- Discover content by genre
+- Search with filters (type, genre, year, rating, language)
+- Discover content by genre and curated sections
 - Watch trailers directly within the application
 - View available streaming/watch sources
 - TV show season and episode guides
@@ -14,12 +14,27 @@ A modern, production-grade web application for discovering movies, TV shows, and
 - Fully responsive design
 
 ## Tech Stack
-- **Framework**: Next.js (App Router, Server Components)
+- **Framework**: Next.js 15 (App Router, Server Components, Edge Runtime)
 - **Library**: React 19
 - **Styling**: Tailwind CSS v4
 - **Icons**: Lucide React
 - **Components**: Radix UI, Class Variance Authority (CVA)
 - **Data Source**: TMDb API
+- **Rate limiting & cache**: Upstash Redis, @upstash/ratelimit (sliding window)
+
+## Architecture
+
+```
+Browser
+  ├─ Server pages (/, /movie/[id], …)  →  lib/tmdb.js  →  TMDB API (token server-side)
+  └─ Client fetches (infinite scroll, search)  →  /api/tmdb  →  TMDB API
+                                                    ↑
+                                              middleware.js (IP ban, UA check)
+                                              rate limit + Redis cache
+```
+
+- **`GET /api/tmdb`** — Edge proxy with whitelisted keys, input validation, rate limits, and optional Redis response cache.
+- **`middleware.js`** — Guards all `/api/*` routes (empty User-Agent → 403, banned IP → 403).
 
 ## Setup Instructions
 
@@ -28,7 +43,7 @@ A modern, production-grade web application for discovering movies, TV shows, and
    ```bash
    npm install
    ```
-3. Set up environment variables. Create a `.env` file based on the required variables below.
+3. Copy `.env.example` to `.env` and fill in the values (see below).
 4. Run the development server:
    ```bash
    npm run dev
@@ -36,31 +51,45 @@ A modern, production-grade web application for discovering movies, TV shows, and
 5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Environment Variables
-The following environment variables are actually used in the application:
-- `TMDB_TOKEN`: Your TMDb API Read Access Token (v4). This is required for fetching data from The Movie Database.
-- `PUBLIC_TOKEN`: Custom public token.
-- `NEXT_PUBLIC_TOKEN`: Custom public token exposed to the browser.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TMDB_TOKEN` | Yes | TMDb API Read Access Token (v4) |
+| `UPSTASH_REDIS_REST_URL` | Production | Upstash Redis REST URL |
+| `UPSTASH_REDIS_REST_TOKEN` | Production | Upstash Redis REST token |
+| `UPSTASH_RATELIMIT_ANALYTICS` | No | Set to `true` to enable Upstash rate-limit analytics (extra Redis commands) |
+
+Create a free Redis database at [console.upstash.com](https://console.upstash.com/redis) → open your database → **REST API** tab → copy URL and token.
+
+Without Upstash credentials the app still runs locally using a strict in-memory rate-limit fallback (not globally consistent across instances).
 
 ## Development Commands
-- `npm run dev`: Starts the Next.js development server
-- `npm run lint`: Runs ESLint for code quality checks
 
-## Production Build
-To create an optimized production build:
-```bash
-npm run build
-```
-Then, to start the production server:
-```bash
-npm run start
-```
+- `npm run dev` — start the development server
+- `npm run lint` — ESLint
+- `npm run build` / `npm run start` — production build and server
+- `node scripts/validate-rate-limit.mjs` — rate limit tests using local fallback (**0 Redis commands**)
+- `node --env-file=.env scripts/validate-rate-limit.mjs --redis` — same tests against Upstash (~15–25 commands; use sparingly on free tier)
+- `node --env-file=.env scripts/test-redis-connection.mjs` — Upstash ping/read/write (~4 commands)
 
-## Deployment Notes
-- This application is optimized for Vercel or any Node.js hosting environment that supports Next.js.
-- Ensure that `TMDB_TOKEN` is securely stored in your deployment environment variables.
-- The `next.config.mjs` includes strict Content Security Policy (CSP) headers, so ensure any additional external resources (images, scripts, frames) are whitelisted if added in the future.
+## Deployment (Vercel)
 
-## Security Considerations
-- **API Key Protection**: The `TMDB_TOKEN` is kept server-side. Client-side requests are routed through a local API endpoint (`/api/tmdb`) to prevent exposing the TMDb token to the browser.
-- **Content Security Policy (CSP)**: Strict headers are defined in `next.config.mjs` limiting scripts, images, and frames to trusted sources (e.g., YouTube, TMDb).
-- **No Local Database/Auth**: No user data is collected, stored, or processed, mitigating risks related to user data breaches.
+1. Push to GitHub/GitLab and import the project on Vercel.
+2. Set environment variables: `TMDB_TOKEN`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
+3. Deploy. Edge middleware and `/api/tmdb` will use Upstash for global rate limiting.
+
+Alternatively, connect **Upstash Redis** from the Vercel Marketplace to inject env vars automatically.
+
+## Security
+
+- **API key protection** — `TMDB_TOKEN` stays server-side; the browser only calls `/api/tmdb`.
+- **Rate limiting** — 60 req/min per IP (general), 30 req/min (search); sliding window via Upstash Redis.
+- **Abuse protection** — repeated violations trigger a 24h IP ban; empty User-Agent blocked on API routes.
+- **Input validation** — whitelisted proxy keys, sanitized search params, page clamp (1–5).
+- **CSP** — strict Content-Security-Policy and security headers in `next.config.mjs`.
+- **No local database/auth** — no user data collected or stored.
+
+## Project Documentation
+
+- `projectSpec.md` — detailed system specification
+- `project-analysis.json` — structured project metadata for tooling/AI context

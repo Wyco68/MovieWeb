@@ -1,6 +1,11 @@
 export const runtime = "edge";
 
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, RATE_LIMIT_POLICIES } from "@/lib/rate-limit";
+import {
+  buildTmdbCacheKey,
+  getTmdbCache,
+  setTmdbCache,
+} from "@/lib/tmdb-cache";
 import {
   isValidId,
   isValidLanguage,
@@ -94,6 +99,33 @@ async function fetchTmdb(url, token) {
   return res.json();
 }
 
+function normalizeListPayload(data, page) {
+  return {
+    page: data?.page ?? page,
+    total_pages: Math.min(Number(data?.total_pages) || 1, 5),
+    results: Array.isArray(data?.results) ? data.results : [],
+  };
+}
+
+async function fetchCachedList({ cacheKey, url, token, page }) {
+  const cached = await getTmdbCache(cacheKey);
+  if (cached) {
+    return new Response(JSON.stringify(cached), {
+      status: 200,
+      headers: cacheHeaders(),
+    });
+  }
+
+  const data = await fetchTmdb(url, token);
+  const payload = normalizeListPayload(data, page);
+  await setTmdbCache(cacheKey, payload);
+
+  return new Response(JSON.stringify(payload), {
+    status: 200,
+    headers: cacheHeaders(),
+  });
+}
+
 // ─── main handler ─────────────────────────────────────────────────────────────
 
 export async function GET(request) {
@@ -107,10 +139,14 @@ export async function GET(request) {
   if (!key) return jsonError("Missing key.", 400);
 
   const isSearch = key === "search_multi_filtered";
-  const rateLimit = applyRateLimit(request, {
+  const rateLimit = await applyRateLimit(request, {
     bucketName: isSearch ? "tmdb-search" : "tmdb-api",
-    maxRequests: isSearch ? 30 : 120,
-    windowMs: 60_000,
+    maxRequests: isSearch
+      ? RATE_LIMIT_POLICIES.TMDB_SEARCH.limit
+      : RATE_LIMIT_POLICIES.TMDB_API.limit,
+    windowMs: (isSearch
+      ? RATE_LIMIT_POLICIES.TMDB_SEARCH.windowSeconds
+      : RATE_LIMIT_POLICIES.TMDB_API.windowSeconds) * 1000,
   });
 
   if (!rateLimit.ok) {
@@ -123,16 +159,12 @@ export async function GET(request) {
     // ── static list endpoints ──────────────────────────────────────────────
     if (STATIC_KEYS[key]) {
       const url = `${TMDB_BASE}${STATIC_KEYS[key]}?page=${page}`;
-      const data = await fetchTmdb(url, token);
-
-      return new Response(
-        JSON.stringify({
-          page: data?.page ?? page,
-          total_pages: Math.min(Number(data?.total_pages) || 1, 5),
-          results: Array.isArray(data?.results) ? data.results : [],
-        }),
-        { status: 200, headers: cacheHeaders() },
-      );
+      return fetchCachedList({
+        cacheKey: buildTmdbCacheKey(key, page),
+        url,
+        token,
+        page,
+      });
     }
 
     // ── discover section (popular/top_rated/upcoming/now_playing) ──────────
@@ -144,16 +176,12 @@ export async function GET(request) {
       if (!endpoint) return jsonError("Invalid section.", 400);
 
       const url = `${TMDB_BASE}${endpoint}?page=${page}`;
-      const data = await fetchTmdb(url, token);
-
-      return new Response(
-        JSON.stringify({
-          page: data?.page ?? page,
-          total_pages: Math.min(Number(data?.total_pages) || 1, 5),
-          results: Array.isArray(data?.results) ? data.results : [],
-        }),
-        { status: 200, headers: cacheHeaders() },
-      );
+      return fetchCachedList({
+        cacheKey: buildTmdbCacheKey("discover_section", page, `${media}:${section}`),
+        url,
+        token,
+        page,
+      });
     }
 
     // ── discover filtered ──────────────────────────────────────────────────
