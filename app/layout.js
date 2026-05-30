@@ -35,7 +35,9 @@ export default function RootLayout({ children }) {
         </Script>
       </head>
       <body>
-        <ScrollToTopOnRouteChange />
+        <Suspense fallback={null}>
+          <ScrollToTopOnRouteChange />
+        </Suspense>
         <div className="app-shell">
           <Suspense fallback={<div className="app-nav mt-4 h-[68px]" />}>
             <Header />

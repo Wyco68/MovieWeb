@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SEARCH_QUERY_MAX } from "@/lib/search-params";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SlidersHorizontal, ChevronDown, ChevronUp } from "lucide-react";
@@ -26,7 +27,7 @@ export default function FilterPanel({ q, mediaType, genre, year, language, ratin
       <div className={`px-4 pb-4 pt-0 sm:block ${isOpen ? 'block' : 'hidden'}`}>
         <div className="h-px w-full bg-[var(--app-panel-border)] mb-4 sm:hidden" />
         <form className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5 items-end">
-          <input type="hidden" name="q" defaultValue={q} />
+          <input type="hidden" name="q" defaultValue={q} maxLength={SEARCH_QUERY_MAX} />
 
           <div className="flex flex-col gap-1.5">
             <label className="text-[11px] font-semibold uppercase tracking-wider text-[#64748d] dark:text-white/60 ml-1">Type</label>
@@ -64,6 +65,10 @@ export default function FilterPanel({ q, mediaType, genre, year, language, ratin
               name="year"
               defaultValue={year}
               placeholder="e.g. 2023"
+              inputMode="numeric"
+              maxLength={4}
+              pattern="(19|20)\d{2}"
+              title="Enter a 4-digit year between 1900 and 2099"
               className="h-10 bg-white dark:bg-[#0d253d] border-[#e5edf5] dark:border-white/10"
             />
           </div>
@@ -74,6 +79,9 @@ export default function FilterPanel({ q, mediaType, genre, year, language, ratin
               name="language"
               defaultValue={language}
               placeholder="e.g. en"
+              maxLength={5}
+              pattern="[a-z]{2}(-[A-Z]{2})?"
+              title="Use a language code like en or en-US"
               className="h-10 bg-white dark:bg-[#0d253d] border-[#e5edf5] dark:border-white/10"
             />
           </div>
@@ -85,6 +93,10 @@ export default function FilterPanel({ q, mediaType, genre, year, language, ratin
                 name="rating"
                 defaultValue={rating}
                 placeholder="0-10"
+                inputMode="decimal"
+                maxLength={4}
+                pattern="(10(\.0)?|[0-9](\.\d)?)"
+                title="Enter a rating between 0 and 10"
                 className="h-10 bg-white dark:bg-[#0d253d] border-[#e5edf5] dark:border-white/10"
               />
             </div>
