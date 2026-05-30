@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getClientIp, isIpBanned } from "./lib/edge-guard.js";
 
 export const config = {
   matcher: "/api/:path*",
@@ -8,12 +7,6 @@ export const config = {
 export async function middleware(request) {
   const userAgent = request.headers.get("user-agent") || "";
   if (!userAgent.trim()) {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-  }
-
-  const ip = getClientIp(request);
-
-  if (await isIpBanned(ip)) {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
