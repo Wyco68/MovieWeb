@@ -1,5 +1,3 @@
-export const runtime = "edge";
-
 import { applyRateLimit, RATE_LIMIT_POLICIES } from "@/lib/rate-limit";
 import {
   buildTmdbCacheKey,

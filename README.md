@@ -74,11 +74,34 @@ Without Upstash credentials the app still runs locally using a strict in-memory 
 
 ## Deployment (Vercel)
 
-1. Push to GitHub/GitLab and import the project on Vercel.
-2. Set environment variables: `TMDB_TOKEN`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
-3. Deploy. Edge middleware and `/api/tmdb` will use Upstash for global rate limiting.
+1. Push to the Git remote **connected to Vercel** (this project uses both GitLab and GitHub — keep them in sync):
+   ```bash
+   git push gitlab main
+   git push origin main
+   ```
+2. Set environment variables in Vercel → **Settings → Environment Variables**:
+   - `TMDB_TOKEN` (required)
+   - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (recommended for production)
+3. Confirm **Root Directory** is empty (repo root) and **Framework Preset** is Next.js.
+4. Deploy and open the **Production** deployment URL from the Vercel dashboard (not an old preview link).
 
-Alternatively, connect **Upstash Redis** from the Vercel Marketplace to inject env vars automatically.
+Alternatively, connect **Upstash Redis** from the Vercel Marketplace to inject Redis env vars automatically.
+
+### Build warnings (usually safe to ignore)
+
+| Warning | Meaning |
+|---------|---------|
+| `Using edge runtime on a page currently disables static generation` | Only applies to routes explicitly set to Edge; `/api/tmdb` now uses the default Node.js runtime. |
+| `Node.js functions are compiled from ESM to CommonJS` | Normal Next.js behavior unless you add `"type": "module"` to `package.json` (not required). |
+
+### If you see 404 on Vercel
+
+1. **Check which Git remote Vercel deploys** — if you push only to GitLab but Vercel watches GitHub, production will be stale or missing files like `middleware.js`.
+2. **Verify the deployment status is Ready** (not Error or Canceled) in Vercel → Deployments.
+3. **Set `TMDB_TOKEN`** — missing token causes server errors on data pages, not always obvious in the UI.
+4. **Test these URLs** on your production domain:
+   - `/` — homepage
+   - `/api/tmdb?key=popular_movies&page=1` — should return JSON
 
 ## Security
 
