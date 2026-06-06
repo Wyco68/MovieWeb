@@ -2,6 +2,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import HorizontalMediaRow from "@/components/HorizontalMediaRow";
+import { isValidId } from "@/lib/search-params";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -31,6 +32,7 @@ function buildFilmography(items) {
 
 export default async function PersonDetail({ params }) {
   const resolvedParams = await params;
+  if (!isValidId(resolvedParams.id)) notFound();
 
   const [person, credits, imageConfig] = await Promise.all([
     tmdbFetch(`/person/${resolvedParams.id}`, { revalidate: 600 }),

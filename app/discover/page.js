@@ -1,4 +1,5 @@
 import HorizontalMediaRow from "@/components/HorizontalMediaRow";
+import { parseRatingNumber, sanitizeDiscoverParams } from "@/lib/search-params";
 import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
 
 const DISCOVERY_ENDPOINTS = {
@@ -16,21 +17,25 @@ const DISCOVERY_ENDPOINTS = {
   },
 };
 
-function parseNumber(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
 export default async function DiscoverPage({ searchParams }) {
   const resolvedSearchParams = await searchParams;
 
-  const mediaType = ["movie", "tv"].includes(resolvedSearchParams?.media)
-    ? resolvedSearchParams.media
-    : "movie";
-  const genre = String(resolvedSearchParams?.genre ?? "").trim();
-  const year = String(resolvedSearchParams?.year ?? "").trim();
-  const language = String(resolvedSearchParams?.language ?? "").trim();
-  const minRating = String(resolvedSearchParams?.rating ?? "").trim();
+  const {
+    media: mediaType,
+    with_genres: genre,
+    with_original_language: language,
+    year,
+    rating: minRating,
+    sort_by: sortBy,
+  } = sanitizeDiscoverParams({
+    media: resolvedSearchParams?.media,
+    genre: resolvedSearchParams?.genre,
+    language: resolvedSearchParams?.language,
+    year: resolvedSearchParams?.year,
+    rating: resolvedSearchParams?.rating,
+    sort_by: resolvedSearchParams?.sort_by,
+  });
+
   const hasFilters =
     mediaType !== "movie" ||
     Boolean(genre) ||
@@ -39,10 +44,10 @@ export default async function DiscoverPage({ searchParams }) {
     Boolean(minRating);
 
   const discoverParams = {
-    sort_by: "popularity.desc",
+    sort_by: sortBy,
     with_genres: genre || undefined,
     with_original_language: language || undefined,
-    "vote_average.gte": parseNumber(minRating),
+    "vote_average.gte": parseRatingNumber(minRating),
   };
 
   if (mediaType === "movie") {
@@ -147,9 +152,9 @@ export default async function DiscoverPage({ searchParams }) {
             media: mediaType,
             with_genres: genre || undefined,
             with_original_language: language || undefined,
-            "vote_average.gte": parseNumber(minRating),
+            "vote_average.gte": parseRatingNumber(minRating),
             year: year || undefined,
-            sort_by: "popularity.desc",
+            sort_by: sortBy,
           }}
           initialPage={discovered?.page ?? 1}
           initialTotalPages={discovered?.total_pages ?? 1}

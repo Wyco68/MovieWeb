@@ -2,8 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { getConfiguredImageUrl, tmdbFetch } from "@/lib/tmdb";
 
-export default async function Persons({ entityId, mediaType = "movie", imageConfig }) {
-  const data = await tmdbFetch(`/${mediaType}/${entityId}/credits`, { revalidate: 600 });
+export default async function Persons({
+  entityId,
+  mediaType = "movie",
+  imageConfig,
+  credits,
+}) {
+  const data =
+    credits ??
+    (await tmdbFetch(`/${mediaType}/${entityId}/credits`, { revalidate: 600 }));
   const casts = (data?.cast ?? []).slice(0, 15);
 
   if (!casts.length) return null;

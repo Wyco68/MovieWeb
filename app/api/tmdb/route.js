@@ -5,11 +5,13 @@ import {
   setTmdbCache,
 } from "@/lib/tmdb-cache";
 import {
+  clampPage,
   isValidId,
   isValidLanguage,
   isValidMediaType,
   isValidYear,
   parseRatingNumber,
+  sanitizeDiscoverParams,
   sanitizeSearchPageParams,
   SEARCH_QUERY_MAX,
   SEARCH_QUERY_MIN,
@@ -50,15 +52,6 @@ const SECTION_ENDPOINTS = {
   },
 };
 
-const FILTER_PARAM_KEYS = [
-  "with_genres",
-  "with_original_language",
-  "vote_average.gte",
-  "primary_release_year",
-  "first_air_date_year",
-  "sort_by",
-];
-
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function jsonError(message, status, extraHeaders = {}) {
@@ -75,11 +68,22 @@ function cacheHeaders() {
   };
 }
 
-function clampPage(raw) {
-  const parsed = Number.parseInt(String(raw || "1"), 10);
-  if (!Number.isFinite(parsed) || parsed < 1) return 1;
-  if (parsed > 5) return 5;
-  return parsed;
+function normalizeSeasonPayload(data) {
+  return {
+    season_number: data?.season_number ?? null,
+    name: data?.name ?? null,
+    overview: data?.overview ?? null,
+    episodes: (Array.isArray(data?.episodes) ? data.episodes : []).map((episode) => ({
+      id: episode?.id,
+      episode_number: episode?.episode_number,
+      name: episode?.name,
+      overview: episode?.overview,
+      air_date: episode?.air_date,
+      runtime: episode?.runtime,
+      still_path: episode?.still_path,
+      vote_average: episode?.vote_average,
+    })),
+  };
 }
 
 async function fetchTmdb(url, token) {
@@ -184,20 +188,34 @@ export async function GET(request) {
 
     // ── discover filtered ──────────────────────────────────────────────────
     if (key === "discover_filtered") {
-      const media = searchParams.get("media") === "tv" ? "tv" : "movie";
-      const params = new URLSearchParams({ page: String(page), sort_by: "popularity.desc" });
+      const {
+        media,
+        with_genres: genre,
+        with_original_language: language,
+        year,
+        rating,
+        sort_by: sortBy,
+      } = sanitizeDiscoverParams({
+        media: searchParams.get("media"),
+        with_genres: searchParams.get("with_genres"),
+        language: searchParams.get("with_original_language") || searchParams.get("language"),
+        year: searchParams.get("year"),
+        rating: searchParams.get("vote_average.gte"),
+        sort_by: searchParams.get("sort_by"),
+      });
 
-      for (const fk of FILTER_PARAM_KEYS) {
-        const val = searchParams.get(fk);
-        if (val) params.set(fk, val);
-      }
+      const params = new URLSearchParams({
+        page: String(page),
+        sort_by: sortBy,
+      });
 
-      const language = searchParams.get("with_original_language") || searchParams.get("language") || "";
-      if (language && !isValidLanguage(language)) return jsonError("Invalid language.", 400);
+      if (genre) params.set("with_genres", genre);
+      if (language) params.set("with_original_language", language);
 
-      const year = searchParams.get("year") || "";
+      const minRating = parseRatingNumber(rating);
+      if (minRating !== undefined) params.set("vote_average.gte", String(minRating));
+
       if (year) {
-        if (!isValidYear(year)) return jsonError("Invalid year.", 400);
         if (media === "movie") params.set("primary_release_year", year);
         else params.set("first_air_date_year", year);
       }
@@ -356,7 +374,10 @@ export async function GET(request) {
       const url = `${TMDB_BASE}/tv/${tvId}/season/${seasonNum}`;
       const data = await fetchTmdb(url, token);
 
-      return new Response(JSON.stringify(data), { status: 200, headers: cacheHeaders() });
+      return new Response(JSON.stringify(normalizeSeasonPayload(data)), {
+        status: 200,
+        headers: cacheHeaders(),
+      });
     }
 
     // ── people popular ────────────────────────────────────────────────────

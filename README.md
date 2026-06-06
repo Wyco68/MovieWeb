@@ -106,10 +106,11 @@ Alternatively, connect **Upstash Redis** from the Vercel Marketplace to inject R
 ## Security
 
 - **API key protection** — `TMDB_TOKEN` stays server-side; the browser only calls `/api/tmdb`.
-- **Rate limiting** — 60 req/min per IP (general), 30 req/min (search); sliding window via Upstash Redis.
-- **Abuse protection** — repeated violations trigger a 24h IP ban; empty User-Agent blocked on API routes.
-- **Input validation** — whitelisted proxy keys, sanitized search params, page clamp (1–5).
-- **CSP** — strict Content-Security-Policy and security headers in `next.config.mjs`.
+- **Rate limiting** — middleware + SSR `tmdbFetch` + `/api/tmdb`: 60 TMDB calls/min, 30 search/min, 40 page views/min per IP; sliding window via Upstash Redis.
+- **Abuse protection** — repeated violations trigger a 24h IP ban; scraper User-Agents blocked on page routes; empty/short UA blocked everywhere.
+- **IP trust** — client `X-Forwarded-For` is never trusted; Vercel uses `x-vercel-forwarded-for`. Set `TRUSTED_PROXY=true` only behind a sanitizing reverse proxy.
+- **Input validation** — whitelisted proxy keys, sanitized search/discover params, page clamp (1–5).
+- **CSP** — external init scripts (no `unsafe-inline` for scripts), strict security headers in `next.config.mjs`.
 - **No local database/auth** — no user data collected or stored.
 
 ## Project Documentation

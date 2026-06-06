@@ -23,16 +23,11 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://api.themoviedb.org" crossOrigin="" />
         <link rel="preconnect" href="https://image.tmdb.org" crossOrigin="" />
         <link rel="preconnect" href="https://www.youtube.com" crossOrigin="" />
         <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="" />
-        <Script id="theme-init" strategy="beforeInteractive">
-          {`(function(){try{var t=localStorage.getItem('nextflix-theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(!t&&d)){document.documentElement.classList.add('dark');}}catch(e){}})();`}
-        </Script>
-        <Script id="scroll-top-on-reload" strategy="beforeInteractive">
-          {`(function(){try{var navEntry=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||null;var isReload=navEntry?navEntry.type==='reload':(performance.navigation&&performance.navigation.type===1);if(isReload){if('scrollRestoration' in history)history.scrollRestoration='manual';window.scrollTo(0,0);window.addEventListener('pageshow',function(){window.scrollTo(0,0);},{once:true});}}catch(e){}})();`}
-        </Script>
+        <Script src="/theme-init.js" strategy="beforeInteractive" />
+        <Script src="/scroll-top-on-reload.js" strategy="beforeInteractive" />
       </head>
       <body>
         <Suspense fallback={null}>

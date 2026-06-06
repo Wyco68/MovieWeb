@@ -6,6 +6,7 @@ import Persons from "@/components/Persons";
 import SeasonEpisodesSwitcher from "@/components/SeasonEpisodesSwitcher";
 import TrailerPlayer from "@/components/TrailerPlayer";
 import WatchSources from "@/components/WatchSources";
+import { isValidId } from "@/lib/search-params";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -23,6 +24,7 @@ function formatRuntime(minutes) {
 
 export default async function TVShowDetail({ params }) {
   const resolvedParams = await params;
+  if (!isValidId(resolvedParams.id)) notFound();
 
   // ONE request with append_to_response — replaces 5 separate fetches
   const [tv, imageConfig] = await Promise.all([
@@ -150,7 +152,12 @@ export default async function TVShowDetail({ params }) {
       ) : null}
 
       <section className="mt-8">
-        <Persons entityId={tv.id} mediaType="tv" imageConfig={imageConfig} />
+        <Persons
+          entityId={tv.id}
+          mediaType="tv"
+          imageConfig={imageConfig}
+          credits={tv.credits}
+        />
       </section>
 
       <WatchSources providersByRegion={watchProviders?.results ?? {}} />

@@ -1,8 +1,11 @@
 import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
+import { isValidId } from "@/lib/search-params";
 import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
+import { notFound } from "next/navigation";
 
 export default async function GenrePage({ params }) {
   const resolvedParams = await params;
+  if (!isValidId(resolvedParams.id)) notFound();
 
   const [byGenres, genreList, imageConfig] = await Promise.all([
     tmdbFetch("/discover/movie", {
