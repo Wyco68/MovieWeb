@@ -7,6 +7,7 @@ import Persons from "@/components/Persons";
 import TrailerPlayer from "@/components/TrailerPlayer";
 import WatchSources from "@/components/WatchSources";
 import { Clock, Star, Calendar } from "lucide-react";
+import { isValidId } from "@/lib/search-params";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -24,6 +25,7 @@ function formatRuntime(minutes) {
 
 export default async function MovieDetail({ params }) {
   const resolvedParams = await params;
+  if (!isValidId(resolvedParams.id)) notFound();
 
   // ONE request with append_to_response
   const [movie, imageConfig] = await Promise.all([
@@ -154,7 +156,12 @@ export default async function MovieDetail({ params }) {
         </section>
 
         <section>
-          <Persons entityId={movie.id} mediaType="movie" imageConfig={imageConfig} />
+          <Persons
+            entityId={movie.id}
+            mediaType="movie"
+            imageConfig={imageConfig}
+            credits={movie.credits}
+          />
         </section>
 
         {keywords.length > 0 && (

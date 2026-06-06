@@ -3,13 +3,13 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const cspHeaderValue = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"} https://www.youtube.com https://s.ytimg.com`,
+  `script-src 'self'${isProduction ? "" : " 'unsafe-eval'"} https://www.youtube.com https://s.ytimg.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://image.tmdb.org https://i.ytimg.com https://yt3.ggpht.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.themoviedb.org https://www.youtube.com https://s.ytimg.com",
+  "connect-src 'self' https://www.youtube.com https://s.ytimg.com",
   "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
-  "media-src 'self' https:",
+  "media-src 'self' https://www.youtube.com https://image.tmdb.org",
   "object-src 'none'",
   "base-uri 'self'",
   "frame-ancestors 'none'",

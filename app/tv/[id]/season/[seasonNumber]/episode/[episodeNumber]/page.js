@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import TrailerPlayer from "@/components/TrailerPlayer";
+import { isValidId } from "@/lib/search-params";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
@@ -25,6 +26,11 @@ function formatEpisodeCode(seasonNumber, episodeNumber) {
 export default async function EpisodeDetailPage({ params }) {
   const resolvedParams = await params;
   const { id: tvId, seasonNumber, episodeNumber } = resolvedParams;
+
+  if (!isValidId(tvId) || !/^\d{1,3}$/.test(String(seasonNumber)) || !/^\d{1,4}$/.test(String(episodeNumber))) {
+    notFound();
+  }
+
   const currentSeasonNumber = Number(seasonNumber);
   const currentEpisodeNumber = Number(episodeNumber);
 

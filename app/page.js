@@ -1,17 +1,11 @@
 import HorizontalMediaRow from "@/components/HorizontalMediaRow";
 import HeroSection from "@/components/HeroSection";
+import { clampPage } from "@/lib/search-params";
 import {
   getConfiguredImageUrl,
   getTmdbImageConfig,
   tmdbFetch,
 } from "@/lib/tmdb";
-
-function asPage(value) {
-  const parsed = Number.parseInt(String(value || "1"), 10);
-  if (!Number.isFinite(parsed) || parsed < 1) return 1;
-  if (parsed > 500) return 500;
-  return parsed;
-}
 
 function settledSection(result) {
   if (result?.status !== "fulfilled") {
@@ -27,7 +21,7 @@ function settledSection(result) {
 
 export default async function Home({ searchParams }) {
   const resolvedSearchParams = await searchParams;
-  const page = asPage(resolvedSearchParams?.page);
+  const page = clampPage(resolvedSearchParams?.page);
 
   const [
     popularResult,
