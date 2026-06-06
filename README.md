@@ -110,7 +110,7 @@ Alternatively, connect **Upstash Redis** from the Vercel Marketplace to inject R
 - **Abuse protection** — repeated violations trigger a 24h IP ban; scraper User-Agents blocked on page routes; empty/short UA blocked everywhere.
 - **IP trust** — client `X-Forwarded-For` is never trusted; Vercel uses `x-vercel-forwarded-for`. Set `TRUSTED_PROXY=true` only behind a sanitizing reverse proxy.
 - **Input validation** — whitelisted proxy keys, sanitized search/discover params, page clamp (1–5).
-- **CSP** — external init scripts (no `unsafe-inline` for scripts), strict security headers in `next.config.mjs`.
+- **CSP** — theme/scroll init in `/public/*.js`; `script-src` includes `'unsafe-inline'` because Next.js requires inline hydration scripts. Strict headers in `next.config.mjs`.
 - **No local database/auth** — no user data collected or stored.
 
 ## Project Documentation

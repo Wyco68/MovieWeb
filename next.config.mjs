@@ -3,7 +3,8 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const cspHeaderValue = [
   "default-src 'self'",
-  `script-src 'self'${isProduction ? "" : " 'unsafe-eval'"} https://www.youtube.com https://s.ytimg.com`,
+  // Next.js injects inline hydration/bootstrap scripts; without 'unsafe-inline' the app breaks in production.
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"} https://www.youtube.com https://s.ytimg.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://image.tmdb.org https://i.ytimg.com https://yt3.ggpht.com",
   "font-src 'self' data:",
