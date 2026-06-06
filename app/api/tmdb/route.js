@@ -1,4 +1,3 @@
-import { applyRateLimit, RATE_LIMIT_POLICIES } from "@/lib/rate-limit";
 import {
   buildTmdbCacheKey,
   getTmdbCache,
@@ -139,23 +138,6 @@ export async function GET(request) {
   const page = clampPage(searchParams.get("page"));
 
   if (!key) return jsonError("Missing key.", 400);
-
-  const isSearch = key === "search_multi_filtered";
-  const rateLimit = await applyRateLimit(request, {
-    bucketName: isSearch ? "tmdb-search" : "tmdb-api",
-    maxRequests: isSearch
-      ? RATE_LIMIT_POLICIES.TMDB_SEARCH.limit
-      : RATE_LIMIT_POLICIES.TMDB_API.limit,
-    windowMs: (isSearch
-      ? RATE_LIMIT_POLICIES.TMDB_SEARCH.windowSeconds
-      : RATE_LIMIT_POLICIES.TMDB_API.windowSeconds) * 1000,
-  });
-
-  if (!rateLimit.ok) {
-    return jsonError("Too many requests.", 429, {
-      "Retry-After": String(rateLimit.retryAfterSeconds),
-    });
-  }
 
   try {
     // ── static list endpoints ──────────────────────────────────────────────

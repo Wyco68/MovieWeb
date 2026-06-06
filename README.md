@@ -106,7 +106,7 @@ Alternatively, connect **Upstash Redis** from the Vercel Marketplace to inject R
 ## Security
 
 - **API key protection** — `TMDB_TOKEN` stays server-side; the browser only calls `/api/tmdb`.
-- **Rate limiting** — middleware + SSR `tmdbFetch` + `/api/tmdb`: 60 TMDB calls/min, 30 search/min, 40 page views/min per IP; sliding window via Upstash Redis.
+- **Rate limiting** — middleware on `/api/tmdb` and `/search` only: 120 API calls/min, 40 search/min per IP; sliding window via Upstash Redis. Normal page browsing is not rate-limited.
 - **Abuse protection** — repeated violations trigger a 24h IP ban; scraper User-Agents blocked on page routes; empty/short UA blocked everywhere.
 - **IP trust** — client `X-Forwarded-For` is never trusted; Vercel uses `x-vercel-forwarded-for`. Set `TRUSTED_PROXY=true` only behind a sanitizing reverse proxy.
 - **Input validation** — whitelisted proxy keys, sanitized search/discover params, page clamp (1–5).

@@ -57,8 +57,8 @@ async function testBurstAbuse() {
 }
 
 async function testPolicyConstants() {
-  assert(RATE_LIMIT_POLICIES.TMDB_API.limit === 60, "TMDB API limit should be 60/min");
-  assert(RATE_LIMIT_POLICIES.TMDB_SEARCH.limit === 30, "Search limit should be 30/min");
+  assert(RATE_LIMIT_POLICIES.TMDB_API.limit === 120, "TMDB API limit should be 120/min");
+  assert(RATE_LIMIT_POLICIES.TMDB_SEARCH.limit === 40, "Search limit should be 40/min");
   assert(RATE_LIMIT_POLICIES.AUTH.limit === 5, "Auth limit reserved at 5/min");
   console.log("PASS policy constants");
 }

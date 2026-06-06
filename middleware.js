@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { applyRateLimit, isBlockedUserAgent, RATE_LIMIT_POLICIES } from "@/lib/rate-limit";
+import { isIpBanned, getClientIp } from "@/lib/edge-guard.js";
 
 const STATIC_FILE_PATTERN =
   /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|ttf|map)$/i;
@@ -34,18 +35,29 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
+  const ip = getClientIp(request);
+  if (await isIpBanned(ip)) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    }
+    return new NextResponse("Forbidden.", { status: 403, headers: { "Content-Type": "text/plain" } });
+  }
+
+  // Only rate-limit the TMDB proxy and search — not normal page browsing.
+  const shouldRateLimit = isApiRoute || pathname === "/search";
+  if (!shouldRateLimit) {
+    return NextResponse.next();
+  }
+
   const isSearch = isSearchPath(pathname, searchParams);
-  const policy = isSearch
-    ? RATE_LIMIT_POLICIES.TMDB_SEARCH
-    : isApiRoute
-      ? RATE_LIMIT_POLICIES.TMDB_API
-      : RATE_LIMIT_POLICIES.TMDB_PAGE;
-  const bucketName = isSearch ? "tmdb-search" : isApiRoute ? "tmdb-api" : "tmdb-page";
+  const policy = isSearch ? RATE_LIMIT_POLICIES.TMDB_SEARCH : RATE_LIMIT_POLICIES.TMDB_API;
+  const bucketName = isSearch ? "tmdb-search" : "tmdb-api";
 
   const rateLimit = await applyRateLimit(request, {
     bucketName,
     maxRequests: policy.limit,
     windowMs: policy.windowSeconds * 1000,
+    skipBanCheck: true,
   });
 
   if (!rateLimit.ok) {
