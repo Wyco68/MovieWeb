@@ -19,6 +19,10 @@ const cspHeaderValue = [
 ].join("; ");
 
 const nextConfig = {
+  // Standalone output: self-contained server bundle for Docker (~10x smaller image).
+  output: "standalone",
+  // Nginx handles gzip in front of the app; skip double compression in Node.
+  compress: false,
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
