@@ -72,7 +72,35 @@ Without Upstash credentials the app still runs locally using a strict in-memory 
 - `node --env-file=.env scripts/validate-rate-limit.mjs --redis` — same tests against Upstash (~15–25 commands; use sparingly on free tier)
 - `node --env-file=.env scripts/test-redis-connection.mjs` — Upstash ping/read/write (~4 commands)
 
-## Deployment (Vercel)
+## Deployment (VPS · Docker · Cloudflare) — primary
+
+Production runs on a single DigitalOcean droplet behind Cloudflare:
+
+```
+Internet → Cloudflare (TLS, WAF, Brotli, HTTP/3, edge cache)
+         → nginx  [Docker]  (Full-strict TLS, gzip, static cache, real client IP)
+         → Next.js [Docker] (standalone output, non-root, 256MB heap cap)
+```
+
+- **CI/CD**: push to `main` → GitHub Actions builds the image, pushes to GHCR,
+  SSHes to the VPS, pulls, restarts, verifies `/api/health`. The VPS never
+  builds anything (works on 512MB RAM).
+- **One-command deploy**: `bash deploy/deploy.sh` on a prepared VPS.
+- Guides: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) ·
+  [docs/VPS-SETUP.md](docs/VPS-SETUP.md) ·
+  [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md) ·
+  [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)
+
+Run the production stack locally:
+
+```bash
+docker compose build app
+DOMAIN=localhost docker compose up   # needs certs/ or comment out nginx TLS
+# or just the app container:
+docker build -t movieweb . && docker run --rm -p 3000:3000 --env-file .env movieweb
+```
+
+## Deployment (Vercel) — alternative
 
 1. Push to the Git remote **connected to Vercel** (this project uses both GitLab and GitHub — keep them in sync):
    ```bash
