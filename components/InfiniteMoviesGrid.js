@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Movies from "@/components/Movies";
 
-const PAGE_LIMIT_NOTICE =
-  "This project requests at most 5 pages per list from the API, so you will not see more than that here.";
+const END_OF_LIST_NOTICE = "You've reached the end of the list.";
+const LOAD_ERROR_NOTICE = "Couldn't load more — please try again later.";
 
 function createItemKey(item, fallbackMediaType) {
   return `${item?.media_type || fallbackMediaType || "movie"}:${item?.id}`;
@@ -182,7 +182,7 @@ export default function InfiniteMoviesGrid({
 
       {showPageLimitNotice ? (
         <p className="row-message mt-3 text-[12px] leading-relaxed muted-label" role="note">
-          {PAGE_LIMIT_NOTICE}
+          {loadError ? LOAD_ERROR_NOTICE : END_OF_LIST_NOTICE}
         </p>
       ) : null}
 

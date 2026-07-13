@@ -14,6 +14,7 @@ import {
   sanitizeSearchPageParams,
   SEARCH_QUERY_MAX,
   SEARCH_QUERY_MIN,
+  TMDB_PAGE_MAX,
 } from "@/lib/search-params";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -103,7 +104,7 @@ async function fetchTmdb(url, token) {
 function normalizeListPayload(data, page) {
   return {
     page: data?.page ?? page,
-    total_pages: Math.min(Number(data?.total_pages) || 1, 5),
+    total_pages: Math.min(Number(data?.total_pages) || 1, TMDB_PAGE_MAX),
     results: Array.isArray(data?.results) ? data.results : [],
   };
 }
@@ -208,7 +209,7 @@ export async function GET(request) {
       return new Response(
         JSON.stringify({
           page: data?.page ?? page,
-          total_pages: Math.min(Number(data?.total_pages) || 1, 5),
+          total_pages: Math.min(Number(data?.total_pages) || 1, TMDB_PAGE_MAX),
           results: Array.isArray(data?.results) ? data.results : [],
         }),
         { status: 200, headers: cacheHeaders() },
@@ -226,7 +227,7 @@ export async function GET(request) {
       return new Response(
         JSON.stringify({
           page: data?.page ?? page,
-          total_pages: Math.min(Number(data?.total_pages) || 1, 5),
+          total_pages: Math.min(Number(data?.total_pages) || 1, TMDB_PAGE_MAX),
           results: Array.isArray(data?.results) ? data.results : [],
         }),
         { status: 200, headers: cacheHeaders() },
@@ -300,7 +301,7 @@ export async function GET(request) {
       return new Response(
         JSON.stringify({
           page: data?.page ?? page,
-          total_pages: Math.min(Number(data?.total_pages) || 1, 5),
+          total_pages: Math.min(Number(data?.total_pages) || 1, TMDB_PAGE_MAX),
           results,
         }),
         { status: 200, headers: cacheHeaders() },
@@ -319,7 +320,7 @@ export async function GET(request) {
       return new Response(
         JSON.stringify({
           page: data?.page ?? page,
-          total_pages: Math.min(Number(data?.total_pages) || 1, 5),
+          total_pages: Math.min(Number(data?.total_pages) || 1, TMDB_PAGE_MAX),
           results: Array.isArray(data?.results) ? data.results : [],
         }),
         { status: 200, headers: cacheHeaders() },
@@ -338,7 +339,7 @@ export async function GET(request) {
       return new Response(
         JSON.stringify({
           page: data?.page ?? page,
-          total_pages: Math.min(Number(data?.total_pages) || 1, 5),
+          total_pages: Math.min(Number(data?.total_pages) || 1, TMDB_PAGE_MAX),
           results: Array.isArray(data?.results) ? data.results : [],
         }),
         { status: 200, headers: cacheHeaders() },
@@ -371,7 +372,7 @@ export async function GET(request) {
       return new Response(
         JSON.stringify({
           page: data?.page ?? page,
-          total_pages: Math.min(Number(data?.total_pages) || 1, 5),
+          total_pages: Math.min(Number(data?.total_pages) || 1, TMDB_PAGE_MAX),
           results: Array.isArray(data?.results) ? data.results : [],
         }),
         { status: 200, headers: cacheHeaders() },

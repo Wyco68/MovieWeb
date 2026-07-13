@@ -13,8 +13,8 @@ function isCompactGridViewport(width) {
   return width >= 1025 && width <= 1200;
 }
 
-const PAGE_LIMIT_NOTICE =
-  "This project requests at most 5 pages per list from the API, so you will not see more than that here.";
+const END_OF_LIST_NOTICE = "You've reached the end of the list.";
+const LOAD_ERROR_NOTICE = "Couldn't load more — please try again later.";
 
 export default function HorizontalMediaRow({
   title,
@@ -195,7 +195,7 @@ export default function HorizontalMediaRow({
 
           {showPageLimitNotice ? (
             <p className="row-message mt-2 text-[12px] leading-relaxed muted-label" role="note">
-              {PAGE_LIMIT_NOTICE}
+              {loadError ? LOAD_ERROR_NOTICE : END_OF_LIST_NOTICE}
             </p>
           ) : null}
 
