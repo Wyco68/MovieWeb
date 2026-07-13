@@ -1,3 +1,8 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Enables access to Cloudflare bindings (KV cache, env) during `next dev`.
+initOpenNextCloudflareForDev();
+
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -19,9 +24,7 @@ const cspHeaderValue = [
 ].join("; ");
 
 const nextConfig = {
-  // Standalone output: self-contained server bundle for Docker (~10x smaller image).
-  output: "standalone",
-  // Nginx handles gzip in front of the app; skip double compression in Node.
+  // Compression is handled by Cloudflare at the edge; skip double compression.
   compress: false,
   reactStrictMode: true,
   poweredByHeader: false,
