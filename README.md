@@ -1,26 +1,27 @@
 # next-movies
 
-A modern, production-grade web application for discovering movies, TV shows, and actors. Built with Next.js App Router, powered by The Movie Database (TMDb) API, and protected with Upstash Redis rate limiting on Vercel Edge.
+A modern, production-grade web application for discovering movies, TV shows, and actors. Built with the Next.js App Router, powered by The Movie Database (TMDb) API, and deployed to Cloudflare Workers with Upstash Redis rate limiting.
+
+🔗 **Live:** [nextmovies.wyco-dev.com](https://nextmovies.wyco-dev.com)
 
 ## Core Features
 - Browse popular, trending, and top-rated movies and TV shows
-- View detailed information for movies, TV series, and cast members
+- Detailed pages for movies, TV series, and cast members
 - Search with filters (type, genre, year, rating, language)
 - Discover content by genre and curated sections
-- Watch trailers directly within the application
-- View available streaming/watch sources
+- In-app trailer playback and streaming/watch sources
 - TV show season and episode guides
-- Dark/Light mode theme toggle
+- Dark/Light mode toggle
 - Fully responsive design
 
 ## Tech Stack
-- **Framework**: Next.js 15 (App Router, Server Components, Edge Runtime)
+- **Framework**: Next.js 15 (App Router, Server Components)
 - **Library**: React 19
 - **Styling**: Tailwind CSS v4
-- **Icons**: Lucide React
-- **Components**: Radix UI, Class Variance Authority (CVA)
-- **Data Source**: TMDb API
-- **Rate limiting & cache**: Upstash Redis, @upstash/ratelimit (sliding window)
+- **Icons**: Lucide React · **Components**: Radix UI, CVA
+- **Data**: TMDb API (token stays server-side)
+- **Rate limiting & cache**: Upstash Redis, `@upstash/ratelimit` (sliding window)
+- **Hosting**: Cloudflare Workers via [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare)
 
 ## Architecture
 
@@ -29,119 +30,86 @@ Browser
   ├─ Server pages (/, /movie/[id], …)  →  lib/tmdb.js  →  TMDB API (token server-side)
   └─ Client fetches (infinite scroll, search)  →  /api/tmdb  →  TMDB API
                                                     ↑
-                                              middleware.js (IP ban, UA check)
-                                              rate limit + Redis cache
+                                              middleware.js (UA check, IP ban,
+                                              rate limit) + Upstash Redis cache
 ```
 
-- **`GET /api/tmdb`** — Edge proxy with whitelisted keys, input validation, rate limits, and optional Redis response cache.
-- **`middleware.js`** — Guards all `/api/*` routes (empty User-Agent → 403, banned IP → 403).
+- **`GET /api/tmdb`** — proxy with allow-listed keys, input validation, rate limits, and Redis response cache. Keeps `TMDB_TOKEN` off the client.
+- **`middleware.js`** — guards routes: empty/scraper User-Agent → 403, banned IP → 403, sliding-window rate limit on `/api/*` and `/search`.
 
-## Setup Instructions
+## Local Development
 
-1. Clone the repository
-2. Install dependencies:
+1. Clone and install:
    ```bash
    npm install
    ```
-3. Copy `.env.example` to `.env` and fill in the values (see below).
-4. Run the development server:
+2. Copy `.env.example` to `.env` and fill in the values (see [Environment Variables](#environment-variables)).
+3. Start the dev server:
    ```bash
    npm run dev
    ```
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Open [http://localhost:3000](http://localhost:3000).
+
+To exercise the **actual Cloudflare Workers runtime** locally (recommended before deploying),
+copy your secrets into `.dev.vars` and run:
+```bash
+npm run preview   # opennextjs-cloudflare build && preview (workerd)
+```
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `TMDB_TOKEN` | Yes | TMDb API Read Access Token (v4) |
+| `TMDB_TOKEN` | Yes | TMDb API Read Access Token (v4). Server-side only. |
 | `UPSTASH_REDIS_REST_URL` | Production | Upstash Redis REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | Production | Upstash Redis REST token |
-| `UPSTASH_RATELIMIT_ANALYTICS` | No | Set to `true` to enable Upstash rate-limit analytics (extra Redis commands) |
+| `NEXT_PUBLIC_SITE_URL` | Production | Canonical URL for metadata/OG (inlined at build) |
+| `UPSTASH_RATELIMIT_ANALYTICS` | No | `true` to enable Upstash analytics (extra Redis commands) |
 
-Create a free Redis database at [console.upstash.com](https://console.upstash.com/redis) → open your database → **REST API** tab → copy URL and token.
+Create a free Redis database at [console.upstash.com](https://console.upstash.com/redis) → **REST API** tab → copy URL and token. Full reference: [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md). Without Upstash credentials the app still runs using a per-isolate in-memory rate-limit fallback (not globally consistent).
 
-Without Upstash credentials the app still runs locally using a strict in-memory rate-limit fallback (not globally consistent across instances).
+## Commands
 
-## Development Commands
-
-- `npm run dev` — start the development server
+- `npm run dev` — development server
+- `npm run build` — Next.js production build
+- `npm run preview` — build + run on the Workers runtime locally (`workerd`)
+- `npm run deploy` — build + deploy to Cloudflare Workers
 - `npm run lint` — ESLint
-- `npm run build` / `npm run start` — production build and server
-- `node scripts/validate-rate-limit.mjs` — rate limit tests using local fallback (**0 Redis commands**)
-- `node --env-file=.env scripts/validate-rate-limit.mjs --redis` — same tests against Upstash (~15–25 commands; use sparingly on free tier)
+- `npm run cf-typegen` — generate Cloudflare binding types
+- `node scripts/validate-rate-limit.mjs` — rate-limit tests using local fallback (0 Redis commands)
 - `node --env-file=.env scripts/test-redis-connection.mjs` — Upstash ping/read/write (~4 commands)
 
-## Deployment (VPS · Docker · Cloudflare) — primary
+## Deployment (Cloudflare Workers)
 
-Production runs on a single DigitalOcean droplet behind Cloudflare:
+Deploys via the OpenNext adapter — the full app (SSR, `/api/tmdb`, middleware) runs on Workers.
 
-```
-Internet → Cloudflare (TLS, WAF, Brotli, HTTP/3, edge cache)
-         → nginx  [Docker]  (Full-strict TLS, gzip, static cache, real client IP)
-         → Next.js [Docker] (standalone output, non-root, 256MB heap cap)
-```
-
-- **CI/CD**: push to `main` → GitHub Actions builds the image, pushes to GHCR,
-  SSHes to the VPS, pulls, restarts, verifies `/api/health`. The VPS never
-  builds anything (works on 512MB RAM).
-- **One-command deploy**: `bash deploy/deploy.sh` on a prepared VPS.
-- Guides: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) ·
-  [docs/VPS-SETUP.md](docs/VPS-SETUP.md) ·
-  [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md) ·
-  [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)
-
-Run the production stack locally:
-
+**Manual:**
 ```bash
-docker compose build app
-DOMAIN=localhost docker compose up   # needs certs/ or comment out nginx TLS
-# or just the app container:
-docker build -t movieweb . && docker run --rm -p 3000:3000 --env-file .env movieweb
+npm run deploy
 ```
 
-## Deployment (Vercel) — alternative
+**Automatic (GitHub → Workers Builds):** connect the repo once in the Cloudflare dashboard
+(Workers & Pages → your Worker → Settings → Builds), set the production branch to `main`, add the
+build variables/secrets, and every push to `main` builds and deploys.
 
-1. Push to the Git remote **connected to Vercel** (this project uses both GitLab and GitHub — keep them in sync):
-   ```bash
-   git push gitlab main
-   git push origin main
-   ```
-2. Set environment variables in Vercel → **Settings → Environment Variables**:
-   - `TMDB_TOKEN` (required)
-   - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (recommended for production)
-3. Confirm **Root Directory** is empty (repo root) and **Framework Preset** is Next.js.
-4. Deploy and open the **Production** deployment URL from the Vercel dashboard (not an old preview link).
-
-Alternatively, connect **Upstash Redis** from the Vercel Marketplace to inject Redis env vars automatically.
-
-### Build warnings (usually safe to ignore)
-
-| Warning | Meaning |
-|---------|---------|
-| `Using edge runtime on a page currently disables static generation` | Only applies to routes explicitly set to Edge; `/api/tmdb` now uses the default Node.js runtime. |
-| `Node.js functions are compiled from ESM to CommonJS` | Normal Next.js behavior unless you add `"type": "module"` to `package.json` (not required). |
-
-### If you see 404 on Vercel
-
-1. **Check which Git remote Vercel deploys** — if you push only to GitLab but Vercel watches GitHub, production will be stale or missing files like `middleware.js`.
-2. **Verify the deployment status is Ready** (not Error or Canceled) in Vercel → Deployments.
-3. **Set `TMDB_TOKEN`** — missing token causes server errors on data pages, not always obvious in the UI.
-4. **Test these URLs** on your production domain:
-   - `/` — homepage
-   - `/api/tmdb?key=popular_movies&page=1` — should return JSON
+One-time setup (KV cache namespace, secrets, custom domain, GitHub connection) and troubleshooting
+are documented in **[docs/CLOUDFLARE.md](docs/CLOUDFLARE.md)**.
 
 ## Security
 
 - **API key protection** — `TMDB_TOKEN` stays server-side; the browser only calls `/api/tmdb`.
-- **Rate limiting** — middleware on `/api/tmdb` and `/search` only: 120 API calls/min, 40 search/min per IP; sliding window via Upstash Redis. Normal page browsing is not rate-limited.
-- **Abuse protection** — repeated violations trigger a 24h IP ban; scraper User-Agents blocked on page routes; empty/short UA blocked everywhere.
-- **IP trust** — client `X-Forwarded-For` is never trusted; Vercel uses `x-vercel-forwarded-for`. Set `TRUSTED_PROXY=true` only behind a sanitizing reverse proxy.
-- **Input validation** — whitelisted proxy keys, sanitized search/discover params, page clamp (1–5).
-- **CSP** — theme/scroll init in `/public/*.js`; `script-src` includes `'unsafe-inline'` because Next.js requires inline hydration scripts. Strict headers in `next.config.mjs`.
+- **Rate limiting** — `/api/tmdb` and `/search` only: 120 API calls/min, 40 search/min per IP (sliding window via Upstash). Normal page browsing is not rate-limited.
+- **Abuse protection** — repeated violations → 24h IP ban; scraper User-Agents blocked on page routes; empty/short UA blocked everywhere.
+- **Client IP** — client `X-Forwarded-For` is never trusted; the unspoofable `CF-Connecting-IP` header (set by Cloudflare) is used for limiting and bans.
+- **Input validation** — allow-listed proxy keys, sanitized search/discover params, page clamp (1–5).
+- **CSP + security headers** — defined in `next.config.mjs`, applied through OpenNext.
 - **No local database/auth** — no user data collected or stored.
 
-## Project Documentation
+## Troubleshooting
 
-- `projectSpec.md` — detailed system specification
-- `project-analysis.json` — structured project metadata for tooling/AI context
+| Symptom | Fix |
+|---|---|
+| 500 on data pages | `TMDB_TOKEN` secret missing/typo — `wrangler secret list` |
+| `KV namespace ... not valid` | Create the KV namespace and paste its real id into `wrangler.jsonc` (see docs/CLOUDFLARE.md) |
+| Rate limiting never triggers locally | Expected — `CF-Connecting-IP` only exists behind Cloudflare, not in `next dev` |
+| Preview differs from prod | Use `npm run preview` (real `workerd`), not `npm run dev` |
