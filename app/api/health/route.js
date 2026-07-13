@@ -1,14 +1,14 @@
 export const dynamic = "force-dynamic";
 
 /**
- * Liveness probe for Docker/nginx/uptime monitors.
- * Intentionally does NOT call TMDB or Redis: it answers "is the Node process
+ * Liveness probe for uptime monitors.
+ * Intentionally does NOT call TMDB or Redis: it answers "is the Worker
  * serving requests", not "are upstreams healthy" — upstream failures already
- * degrade gracefully in the app and must not restart the container.
+ * degrade gracefully in the app.
  */
 export async function GET() {
   return Response.json(
-    { status: "ok", uptime: Math.round(process.uptime()) },
+    { status: "ok", timestamp: Date.now() },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

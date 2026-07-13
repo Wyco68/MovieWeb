@@ -7,7 +7,7 @@ const STATIC_FILE_PATTERN =
 
 export const config = {
   matcher: [
-    // api/health is excluded so container healthchecks never depend on Redis or rate limits.
+    // api/health is excluded so liveness checks never depend on Redis or rate limits.
     "/((?!_next/static|_next/image|favicon.ico|api/health).*)",
   ],
 };
