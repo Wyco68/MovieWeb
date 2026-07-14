@@ -8,11 +8,9 @@ import MobileSidebarDrawer from "@/components/MobileSidebarDrawer";
 import ScrollToTopOnRouteChange from "@/components/ScrollToTopOnRouteChange";
 import ThemeToggle from "@/components/ThemeToggle";
 
-// The layout's Sidebar fetches TMDB data, so no page can be prerendered
-// without TMDB_TOKEN. Rendering everything on demand lets the Docker image
-// build without secrets; responses stay cached (lib/tmdb.js + Cloudflare).
-export const dynamic = "force-dynamic";
-
+// Fully static export: the layout and every page are prerendered to HTML at
+// build time and hydrated on the client. No TMDB token is needed at build time
+// because all TMDB data is fetched in the browser via the /api/tmdb function.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata = {

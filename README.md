@@ -1,8 +1,6 @@
 # next-movies
 
-A modern, production-grade web application for discovering movies, TV shows, and actors. Built with the Next.js App Router, powered by The Movie Database (TMDb) API, and deployed to Cloudflare Workers with Upstash Redis rate limiting.
-
-🔗 **Live:** [nextmovies.wyco-dev.com](https://nextmovies.wyco-dev.com)
+A modern web app for discovering movies, TV shows, and actors. Built with the Next.js App Router and powered by The Movie Database (TMDb) API, shipped as a **fully static site** with a single edge function proxying TMDB.
 
 ## Core Features
 - Browse popular, trending, and top-rated movies and TV shows
@@ -15,27 +13,40 @@ A modern, production-grade web application for discovering movies, TV shows, and
 - Fully responsive design
 
 ## Tech Stack
-- **Framework**: Next.js 15 (App Router, Server Components)
-- **Library**: React 19
+- **Framework**: Next.js 15 (App Router, static export — `output: "export"`)
+- **Library**: React 19 (Client Components + client-side data fetching)
 - **Styling**: Tailwind CSS v4
 - **Icons**: Lucide React · **Components**: Radix UI, CVA
-- **Data**: TMDb API (token stays server-side)
-- **Rate limiting & cache**: Upstash Redis, `@upstash/ratelimit` (sliding window)
-- **Hosting**: Cloudflare Workers via [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare)
+- **Data**: TMDb API (token stays server-side, inside the edge function)
+- **Rate limiting** (optional): Upstash Redis, `@upstash/ratelimit` (sliding window)
 
 ## Architecture
 
 ```
-Browser
-  ├─ Server pages (/, /movie/[id], …)  →  lib/tmdb.js  →  TMDB API (token server-side)
-  └─ Client fetches (infinite scroll, search)  →  /api/tmdb  →  TMDB API
-                                                    ↑
-                                              middleware.js (UA check, IP ban,
-                                              rate limit) + Upstash Redis cache
+Browser (static HTML/JS)
+   │  every page is a Client Component that fetches on mount
+   ▼
+GET /api/tmdb   ──►  Edge function (functions/api/tmdb.js)
+                       • holds TMDB_TOKEN (never sent to the browser)
+                       • allow-listed keys + input validation
+                       • bot / IP-ban / rate-limit guards (Upstash, optional)
+                       • Cache-Control: s-maxage=600  → edge cache
+                       ▼
+                     TMDB API
 ```
 
-- **`GET /api/tmdb`** — proxy with allow-listed keys, input validation, rate limits, and Redis response cache. Keeps `TMDB_TOKEN` off the client.
-- **`middleware.js`** — guards routes: empty/scraper User-Agent → 403, banned IP → 403, sliding-window rate limit on `/api/*` and `/search`.
+Why this shape:
+
+- **Static-first.** Pages ship as pre-rendered HTML and hydrate on the client. There is no
+  Node server, no SSR, and no Incremental Static Regeneration.
+- **One tiny function.** The only server-side code is the TMDB proxy. It exists solely so the
+  API token never reaches the browser. Everything else is CDN-served static content.
+- **Edge caching.** The proxy sets `Cache-Control: s-maxage=600, stale-while-revalidate=86400`,
+  so the edge cache absorbs repeat requests and keeps TMDB call volume low.
+- **Arbitrary detail routes.** `/movie/:id`, `/tv/:id`, `/person/:id`, `/genres/:id`, and the
+  episode route accept any id. A static export can only pre-render one placeholder per dynamic
+  route, so `public/_redirects` rewrites those paths to the placeholder shell and the Client
+  Component reads the real id from the URL and fetches its data.
 
 ## Local Development
 
@@ -43,73 +54,40 @@ Browser
    ```bash
    npm install
    ```
-2. Copy `.env.example` to `.env` and fill in the values (see [Environment Variables](#environment-variables)).
-3. Start the dev server:
+2. Copy `.env.example` to `.env` and fill in your TMDb token (Upstash credentials are optional).
+3. **UI-only dev** (fast refresh; the `/api/tmdb` function is *not* available, so data won't load):
    ```bash
    npm run dev
    ```
-4. Open [http://localhost:3000](http://localhost:3000).
-
-To exercise the **actual Cloudflare Workers runtime** locally (recommended before deploying),
-copy your secrets into `.dev.vars` and run:
-```bash
-npm run preview   # opennextjs-cloudflare build && preview (workerd)
-```
-
-## Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `TMDB_TOKEN` | Yes | TMDb API Read Access Token (v4). Server-side only. |
-| `UPSTASH_REDIS_REST_URL` | Production | Upstash Redis REST URL |
-| `UPSTASH_REDIS_REST_TOKEN` | Production | Upstash Redis REST token |
-| `NEXT_PUBLIC_SITE_URL` | Production | Canonical URL for metadata/OG (inlined at build) |
-| `UPSTASH_RATELIMIT_ANALYTICS` | No | `true` to enable Upstash analytics (extra Redis commands) |
-
-Create a free Redis database at [console.upstash.com](https://console.upstash.com/redis) → **REST API** tab → copy URL and token. Full reference: [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md). Without Upstash credentials the app still runs using a per-isolate in-memory rate-limit fallback (not globally consistent).
+4. **Full-stack dev** (static build + the edge function, with data):
+   ```bash
+   npm run preview
+   ```
 
 ## Commands
 
-- `npm run dev` — development server
-- `npm run build` — Next.js production build
-- `npm run preview` — build + run on the Workers runtime locally (`workerd`)
-- `npm run deploy` — build + deploy to Cloudflare Workers
+- `npm run dev` — Next.js dev server (UI only; no `/api/tmdb`)
+- `npm run build` — static export to `out/`
+- `npm run preview` — build + serve `out/` **with** functions locally
 - `npm run lint` — ESLint
-- `npm run cf-typegen` — generate Cloudflare binding types
-- `node scripts/validate-rate-limit.mjs` — rate-limit tests using local fallback (0 Redis commands)
-- `node --env-file=.env scripts/test-redis-connection.mjs` — Upstash ping/read/write (~4 commands)
-
-## Deployment (Cloudflare Workers)
-
-Deploys via the OpenNext adapter — the full app (SSR, `/api/tmdb`, middleware) runs on Workers.
-
-**Manual:**
-```bash
-npm run deploy
-```
-
-**Automatic (GitHub → Workers Builds):** connect the repo once in the Cloudflare dashboard
-(Workers & Pages → your Worker → Settings → Builds), set the production branch to `main`, add the
-build variables/secrets, and every push to `main` builds and deploys.
-
-One-time setup (KV cache namespace, secrets, custom domain, GitHub connection) and troubleshooting
-are documented in **[docs/CLOUDFLARE.md](docs/CLOUDFLARE.md)**.
+- `node --env-file=.env scripts/test-redis-connection.mjs` — Upstash connectivity check
+- `node scripts/qa-audit.mjs <baseUrl>` — functional/security/perf audit against a running site
 
 ## Security
 
-- **API key protection** — `TMDB_TOKEN` stays server-side; the browser only calls `/api/tmdb`.
-- **Rate limiting** — `/api/tmdb` and `/search` only: 120 API calls/min, 40 search/min per IP (sliding window via Upstash). Normal page browsing is not rate-limited.
-- **Abuse protection** — repeated violations → 24h IP ban; scraper User-Agents blocked on page routes; empty/short UA blocked everywhere.
-- **Client IP** — client `X-Forwarded-For` is never trusted; the unspoofable `CF-Connecting-IP` header (set by Cloudflare) is used for limiting and bans.
-- **Input validation** — allow-listed proxy keys, sanitized search/discover params, page clamp (1–5).
-- **CSP + security headers** — defined in `next.config.mjs`, applied through OpenNext.
+- **API key protection** — `TMDB_TOKEN` lives only in the edge function; the browser only calls `/api/tmdb`.
+- **Rate limiting** — 120 API calls/min, 40 search/min per IP (sliding window via Upstash) inside the function.
+- **Abuse protection** — repeated violations → 24h IP ban; empty/garbage User-Agents blocked.
+- **Client IP** — client `X-Forwarded-For` is never trusted; the unspoofable `CF-Connecting-IP` header is used.
+- **Input validation** — allow-listed proxy keys, sanitized search/discover params, page clamp.
+- **CSP + security headers** — served from `public/_headers` at the edge.
 - **No local database/auth** — no user data collected or stored.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| 500 on data pages | `TMDB_TOKEN` secret missing/typo — `wrangler secret list` |
-| `KV namespace ... not valid` | Create the KV namespace and paste its real id into `wrangler.jsonc` (see docs/CLOUDFLARE.md) |
-| Rate limiting never triggers locally | Expected — `CF-Connecting-IP` only exists behind Cloudflare, not in `next dev` |
-| Preview differs from prod | Use `npm run preview` (real `workerd`), not `npm run dev` |
+| Data doesn't load under `npm run dev` | Expected — `next dev` doesn't run the edge function. Use `npm run preview`. |
+| 500 from `/api/tmdb` | `TMDB_TOKEN` not set in the environment. |
+| Detail page shows "not found" | The id returned 404 from TMDB, or the `_redirects` rewrite is missing in `out/`. |
+| Rate limiting never triggers locally | Expected — `CF-Connecting-IP` only exists behind the CDN. |

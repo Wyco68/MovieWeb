@@ -1,11 +1,15 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import HorizontalMediaRow from "@/components/HorizontalMediaRow";
 import HeroSection from "@/components/HeroSection";
-import { clampPage } from "@/lib/search-params";
-import {
-  getConfiguredImageUrl,
-  getTmdbImageConfig,
-  tmdbFetch,
-} from "@/lib/tmdb";
+import Loading from "@/app/loading";
+import { fetchTmdb } from "@/lib/api";
+import { getConfiguredImageUrl } from "@/lib/tmdb-image";
+
+// Image config is not fetched — getConfiguredImageUrl falls back to TMDB's
+// standard base URL + sizes, which are identical to the configured values.
+const imageConfig = null;
 
 function settledSection(result) {
   if (result?.status !== "fulfilled") {
@@ -19,29 +23,35 @@ function settledSection(result) {
   };
 }
 
-export default async function Home({ searchParams }) {
-  const resolvedSearchParams = await searchParams;
-  const page = clampPage(resolvedSearchParams?.page);
+export default function Home() {
+  const [data, setData] = useState(null);
 
-  const [
-    popularResult,
-    trendingResult,
-    tvPopularResult,
-    topRatedResult,
-    imageConfigResult,
-  ] = await Promise.allSettled([
-    tmdbFetch("/movie/popular", { params: { page }, revalidate: 600 }),
-    tmdbFetch("/trending/movie/week", { params: { page }, revalidate: 600 }),
-    tmdbFetch("/tv/popular", { params: { page }, revalidate: 600 }),
-    tmdbFetch("/movie/top_rated", { params: { page }, revalidate: 600 }),
-    getTmdbImageConfig(),
-  ]);
+  useEffect(() => {
+    let active = true;
 
-  const imageConfig = imageConfigResult.status === "fulfilled" ? imageConfigResult.value : null;
-  const popular = settledSection(popularResult);
-  const trending = settledSection(trendingResult);
-  const tvPopular = settledSection(tvPopularResult);
-  const topRated = settledSection(topRatedResult);
+    Promise.allSettled([
+      fetchTmdb({ key: "popular_movies" }),
+      fetchTmdb({ key: "trending_movies_week" }),
+      fetchTmdb({ key: "popular_tv" }),
+      fetchTmdb({ key: "top_rated_movies" }),
+    ]).then(([popularResult, trendingResult, tvPopularResult, topRatedResult]) => {
+      if (!active) return;
+      setData({
+        popular: settledSection(popularResult),
+        trending: settledSection(trendingResult),
+        tvPopular: settledSection(tvPopularResult),
+        topRated: settledSection(topRatedResult),
+      });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!data) return <Loading />;
+
+  const { popular, trending, tvPopular, topRated } = data;
 
   const featured = popular.items[0] || trending.items[0] || tvPopular.items[0];
   const featuredBackdrop = getConfiguredImageUrl(featured?.backdrop_path, {

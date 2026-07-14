@@ -1,14 +1,49 @@
-import HorizontalMediaRow from "@/components/HorizontalMediaRow";
-import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
+"use client";
 
-export default async function TVShowsPage() {
-  const [popular, topRated, airingToday, onAir, imageConfig] = await Promise.all([
-    tmdbFetch("/tv/popular", { revalidate: 600 }),
-    tmdbFetch("/tv/top_rated", { revalidate: 600 }),
-    tmdbFetch("/tv/airing_today", { revalidate: 600 }),
-    tmdbFetch("/tv/on_the_air", { revalidate: 600 }),
-    getTmdbImageConfig(),
-  ]);
+import { useEffect, useState } from "react";
+import HorizontalMediaRow from "@/components/HorizontalMediaRow";
+import Loading from "@/app/loading";
+import { fetchTmdb } from "@/lib/api";
+
+const imageConfig = null;
+
+function section(result) {
+  return {
+    items: result?.results ?? [],
+    page: result?.page ?? 1,
+    totalPages: result?.total_pages ?? 1,
+  };
+}
+
+export default function TVShowsPage() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([
+      fetchTmdb({ key: "popular_tv" }).catch(() => null),
+      fetchTmdb({ key: "top_rated_tv" }).catch(() => null),
+      fetchTmdb({ key: "airing_today_tv" }).catch(() => null),
+      fetchTmdb({ key: "on_the_air_tv" }).catch(() => null),
+    ]).then(([popular, topRated, airingToday, onAir]) => {
+      if (!active) return;
+      setData({
+        popular: section(popular),
+        topRated: section(topRated),
+        airingToday: section(airingToday),
+        onAir: section(onAir),
+      });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!data) return <Loading />;
+
+  const { popular, topRated, airingToday, onAir } = data;
 
   return (
     <>
@@ -18,47 +53,47 @@ export default async function TVShowsPage() {
 
       <HorizontalMediaRow
         title="Popular"
-        items={popular?.results ?? []}
+        items={popular.items}
         mediaType="tv"
         imageConfig={imageConfig}
         error={false}
         priorityFirstImage
         fetchKey="popular_tv"
-        initialPage={popular?.page ?? 1}
-        initialTotalPages={popular?.total_pages ?? 1}
+        initialPage={popular.page}
+        initialTotalPages={popular.totalPages}
       />
 
       <HorizontalMediaRow
         title="Top Rated"
-        items={topRated?.results ?? []}
+        items={topRated.items}
         mediaType="tv"
         imageConfig={imageConfig}
         error={false}
         fetchKey="top_rated_tv"
-        initialPage={topRated?.page ?? 1}
-        initialTotalPages={topRated?.total_pages ?? 1}
+        initialPage={topRated.page}
+        initialTotalPages={topRated.totalPages}
       />
 
       <HorizontalMediaRow
         title="Airing Today"
-        items={airingToday?.results ?? []}
+        items={airingToday.items}
         mediaType="tv"
         imageConfig={imageConfig}
         error={false}
         fetchKey="airing_today_tv"
-        initialPage={airingToday?.page ?? 1}
-        initialTotalPages={airingToday?.total_pages ?? 1}
+        initialPage={airingToday.page}
+        initialTotalPages={airingToday.totalPages}
       />
 
       <HorizontalMediaRow
         title="On The Air"
-        items={onAir?.results ?? []}
+        items={onAir.items}
         mediaType="tv"
         imageConfig={imageConfig}
         error={false}
         fetchKey="on_the_air_tv"
-        initialPage={onAir?.page ?? 1}
-        initialTotalPages={onAir?.total_pages ?? 1}
+        initialPage={onAir.page}
+        initialTotalPages={onAir.totalPages}
       />
     </>
   );

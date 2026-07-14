@@ -1,0 +1,15 @@
+# Cloudflare Pages configuration.
+#
+# This project deploys as a STATIC site (Next.js `output: "export"` → out/)
+# plus the Pages Functions in functions/. There is NO Workers KV namespace and
+# no OpenNext worker — the KV consumption that motivated this migration is gone.
+#
+# Secrets/vars (TMDB_TOKEN, UPSTASH_*) are configured in the Cloudflare Pages
+# dashboard (Settings → Environment variables), not committed here.
+
+name = "movieweb"
+compatibility_date = "2025-03-25"
+compatibility_flags = ["nodejs_compat"]
+
+# Directory of static assets produced by `next build` (output: "export").
+pages_build_output_dir = "out"

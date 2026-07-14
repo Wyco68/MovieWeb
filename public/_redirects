@@ -1,0 +1,16 @@
+# SPA rewrites for arbitrary dynamic detail routes.
+#
+# A static export can only pre-render the placeholder param for each dynamic
+# route (see generateStaticParams in the matching page.js). These rules serve
+# that placeholder shell for ANY id (200 = rewrite, URL is preserved); the
+# client component then reads the real id from the URL and fetches its data
+# from /api/tmdb. First match wins, so the episode rule precedes /tv/*.
+#
+# Static routes (/, /tv, /people, /discover, /search) and /api/* are served
+# directly and are intentionally not matched here.
+
+/tv/*/season/*/episode/*   /tv/placeholder/season/1/episode/1   200
+/movie/*                   /movie/placeholder                   200
+/tv/*                      /tv/placeholder                      200
+/person/*                  /person/placeholder                  200
+/genres/*                  /genres/placeholder                  200

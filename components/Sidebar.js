@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { tmdbFetch } from "@/lib/tmdb";
+import { MOVIE_GENRES } from "@/lib/genres";
 import { Film, Tv, Users, Compass, ChevronRight } from "lucide-react";
 
-export default async function Sidebar() {
-  const data = await tmdbFetch("/genre/movie/list", { revalidate: 86400 });
-  const genres = data?.genres ?? [];
+export default function Sidebar() {
+  // TMDB's movie genre list is effectively static, so it's bundled locally
+  // (lib/genres.js) instead of fetched — no request, no token, works at build.
+  const genres = MOVIE_GENRES;
 
   const primaryLinks = [
     { href: "/", label: "All Movies", icon: Film },

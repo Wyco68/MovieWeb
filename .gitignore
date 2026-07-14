@@ -19,10 +19,8 @@
 /.next/
 /out/
 
-# cloudflare / opennext build output & generated types
-/.open-next/
+# cloudflare pages local build/dev artifacts
 /.wrangler/
-cloudflare-env.d.ts
 
 # production
 /build
@@ -30,9 +28,6 @@ cloudflare-env.d.ts
 # misc
 .DS_Store
 *.pem
-
-# TLS certificates (Cloudflare origin cert/key live only on the VPS)
-/certs/
 
 # debug
 npm-debug.log*

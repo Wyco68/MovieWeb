@@ -1,34 +1,15 @@
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-
-// Enables access to Cloudflare bindings (KV cache, env) during `next dev`.
-initOpenNextCloudflareForDev();
-
 /** @type {import('next').NextConfig} */
-const isProduction = process.env.NODE_ENV === "production";
-
-const cspHeaderValue = [
-  "default-src 'self'",
-  // Next.js injects inline hydration/bootstrap scripts; without 'unsafe-inline' the app breaks in production.
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"} https://www.youtube.com https://s.ytimg.com`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://image.tmdb.org https://i.ytimg.com https://yt3.ggpht.com",
-  "font-src 'self' data:",
-  "connect-src 'self' https://www.youtube.com https://s.ytimg.com",
-  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
-  "media-src 'self' https://www.youtube.com https://image.tmdb.org",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'",
-  "form-action 'self'",
-  ...(isProduction ? ["upgrade-insecure-requests"] : []),
-].join("; ");
-
 const nextConfig = {
-  // Compression is handled by Cloudflare at the edge; skip double compression.
-  compress: false,
+  // Static HTML export — the whole site ships as static assets to Cloudflare
+  // Pages. No Node server, no Workers KV, no incremental cache. TMDB data is
+  // fetched client-side through the /api/tmdb Pages Function (see functions/).
+  output: "export",
+
   reactStrictMode: true,
-  poweredByHeader: false,
+
   images: {
+    // Required for `output: "export"` — Cloudflare Pages serves images directly
+    // from TMDB's CDN; no Next.js image optimization server runs.
     unoptimized: true,
     remotePatterns: [
       {
@@ -38,21 +19,10 @@ const nextConfig = {
       },
     ],
   },
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          { key: "Content-Security-Policy", value: cspHeaderValue },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
-        ],
-      },
-    ];
-  },
+
+  // NOTE: security headers live in public/_headers, not in next.config's
+  // headers(). A static export has no server to run headers() at request time,
+  // so Cloudflare Pages applies them from the _headers file at the edge.
 };
 
 export default nextConfig;

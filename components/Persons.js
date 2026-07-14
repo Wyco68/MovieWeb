@@ -1,17 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getConfiguredImageUrl, tmdbFetch } from "@/lib/tmdb";
+import { getConfiguredImageUrl } from "@/lib/tmdb-image";
 
-export default async function Persons({
-  entityId,
-  mediaType = "movie",
-  imageConfig,
-  credits,
-}) {
-  const data =
-    credits ??
-    (await tmdbFetch(`/${mediaType}/${entityId}/credits`, { revalidate: 600 }));
-  const casts = (data?.cast ?? []).slice(0, 15);
+export default function Persons({ imageConfig, credits }) {
+  // `credits` (from the detail payload's append_to_response=credits) is always
+  // provided by the caller; no separate fetch is needed.
+  const casts = (credits?.cast ?? []).slice(0, 15);
 
   if (!casts.length) return null;
 

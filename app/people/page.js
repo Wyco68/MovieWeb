@@ -1,11 +1,26 @@
-import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
-import { getTmdbImageConfig, tmdbFetch } from "@/lib/tmdb";
+"use client";
 
-export default async function PeoplePage() {
-  const [data, imageConfig] = await Promise.all([
-    tmdbFetch("/person/popular", { revalidate: 600 }),
-    getTmdbImageConfig(),
-  ]);
+import { useEffect, useState } from "react";
+import InfiniteMoviesGrid from "@/components/InfiniteMoviesGrid";
+import Loading from "@/app/loading";
+import { fetchTmdb } from "@/lib/api";
+
+export default function PeoplePage() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchTmdb({ key: "popular_people" })
+      .catch(() => ({ results: [], page: 1, total_pages: 1 }))
+      .then((result) => {
+        if (active) setData(result);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (!data) return <Loading />;
 
   return (
     <>
@@ -13,7 +28,7 @@ export default async function PeoplePage() {
       <InfiniteMoviesGrid
         initialItems={data?.results ?? []}
         mediaType="person"
-        imageConfig={imageConfig}
+        imageConfig={null}
         priorityFirstImage
         priorityImageCount={6}
         fetchKey="popular_people"
